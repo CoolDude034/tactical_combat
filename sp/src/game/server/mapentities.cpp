@@ -591,8 +591,6 @@ void MapEntity_PrecacheEntity( const char *pEntData, int &nStringSize )
 	}
 }
 
-extern ConVar sv_custom_gamemode;
-
 // These are all from HL2:WT, since that old code was borked i'm scalvenging some crap from that
 ConVar npc_metropolice_early_canal_tweaks("npc_metropolice_early_canal_tweaks", "1");
 ConVar sv_patch_prop_vehicle_jeep("sv_patch_prop_vehicle_jeep", "0");
@@ -839,10 +837,7 @@ const char *MapEntity_ParseEntity(CBaseEntity *&pEntity, const char *pEntData, I
 			pEntity->ParseMapData(&entData);
 			// HACK: Since i want to remove my old code after i port the changes from that to this, i've decided
 			// to add this hacky solution to support HL2: World Tweaks without affecting Tactical Combat
-			if (FStrEq(sv_custom_gamemode.GetString(), "world_tweaks"))
-			{
-				MapEntity_InitWorldTweaks(pEntity, pEntData);
-			}
+			MapEntity_InitWorldTweaks(pEntity, pEntData);
 		}
 		else
 		{
