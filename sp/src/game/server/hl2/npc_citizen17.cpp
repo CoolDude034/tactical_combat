@@ -314,9 +314,7 @@ static const char *g_ppszModelLocs[] =
 	"Group01",
 	"Group02",
 	"Group03%s",
-	"Combine",
-	"Security",
-	"Business"
+	"Combine"
 };
 
 #define IsExcludedHead( type, bMedic, iHead) false // see XBox codeline for an implementation
