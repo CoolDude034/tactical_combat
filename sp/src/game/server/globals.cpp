@@ -27,6 +27,9 @@ int				g_iSkillLevel;
 bool			g_fGameOver;
 
 ConVar sv_custom_gamemode("sv_custom_gamemode", "tactical_combat", FCVAR_GAMEDLL | FCVAR_HIDDEN);
+ConVar sv_enable_hitscan_weapons("sv_enable_hitscan_weapons", "1", FCVAR_GAMEDLL | FCVAR_HIDDEN);
+
+ConVar sk_bullet_speed("sk_bullet_speed", "15000", FCVAR_GAMEDLL | FCVAR_REPLICATED);
 
 ConVar sk_npc_glock_chance("sk_npc_pistol_chance", "0.25", FCVAR_GAMEDLL | FCVAR_HIDDEN);
 ConVar sk_npc_mp5_chance("sk_npc_mp5_chance", "0.25", FCVAR_GAMEDLL | FCVAR_HIDDEN);
