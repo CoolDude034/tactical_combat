@@ -91,6 +91,8 @@ ConVar npc_combine_hacked_gunpos_position_posY("npc_combine_hacked_gunpos_positi
 ConVar npc_combine_hacked_gunpos_position_posZ("npc_combine_hacked_gunpos_position_posZ", "55", FCVAR_HIDDEN);
 
 ConVar npc_combine_move_and_shoot_delay("npc_combine_move_and_shoot_delay", "0.75", FCVAR_HIDDEN);
+
+ConVar npc_combine_disable_elite_alt_firing("npc_combine_disable_elite_alt_firing", "0");
 #endif
 
 #define COMBINE_SKIN_DEFAULT		0
@@ -799,6 +801,8 @@ Class_T	CNPC_Combine::Classify ( void )
 //-----------------------------------------------------------------------------
 bool CNPC_Combine::IsAltFireCapable( void )
 {
+	if (npc_combine_disable_elite_alt_firing.GetBool())
+		return false;
 	// The base class tells us if we're carrying an alt-fire-able weapon.
 	return (IsElite() || m_bAlternateCapable) && BaseClass::IsAltFireCapable();
 }
