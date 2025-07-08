@@ -117,7 +117,6 @@ ConVar npc_citizen_resupplier_adjust_ammo("npc_citizen_resupplier_adjust_ammo", 
 ConVar npc_citizen_nocollide_player( "npc_citizen_nocollide_player", "0" );
 #endif
 
-extern ConVar sv_custom_gamemode;
 extern ConVar sk_npc_glock_chance;
 extern ConVar sk_npc_mp5_chance;
 extern ConVar sk_npc_remington_chance;
