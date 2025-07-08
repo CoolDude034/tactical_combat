@@ -117,13 +117,6 @@ ConVar npc_citizen_resupplier_adjust_ammo("npc_citizen_resupplier_adjust_ammo", 
 ConVar npc_citizen_nocollide_player( "npc_citizen_nocollide_player", "0" );
 #endif
 
-extern ConVar sk_npc_glock_chance;
-extern ConVar sk_npc_mp5_chance;
-extern ConVar sk_npc_remington_chance;
-
-string_t d2_prison_07 = AllocPooledString("d2_prison_07");
-string_t d3_c17_05 = AllocPooledString("d3_c17_05");
-
 #define ShouldAutosquad() (npc_citizen_auto_player_squad.GetBool())
 
 enum SquadSlot_T
@@ -314,7 +307,6 @@ static const char *g_ppszModelLocs[] =
 	"Group01",
 	"Group02",
 	"Group03%s",
-	"Combine",
 	"Security",
 	"Business"
 };
