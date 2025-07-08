@@ -41,6 +41,8 @@ extern ConVar sk_plr_dmg_buckshot;
 
 #ifdef MAPBASE
 	ConVar sk_combine_head_dmg_multiplier( "sk_combine_head_dmg_multiplier", "2" );
+
+	ConVar sk_combine_elites_dont_drop_balls("sk_combine_elites_dont_drop_balls", "0"); // Prevent elites from dropping balls
 #endif
 
 extern ConVar sk_plr_num_shotgun_pellets;
@@ -325,7 +327,7 @@ void CNPC_CombineS::Event_Killed( const CTakeDamageInfo &info )
 	if ( pPlayer != NULL )
 	{
 		// Elites drop alt-fire ammo, so long as they weren't killed by dissolving.
-		if( IsElite() )
+		if( IsElite() && !sk_combine_elites_dont_drop_balls.GetBool() )
 		{
 #ifdef HL2_EPISODIC
 			if ( HasSpawnFlags( SF_COMBINE_NO_AR2DROP ) == false )
