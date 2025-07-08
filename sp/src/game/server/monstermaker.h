@@ -36,9 +36,13 @@ public:
 	bool IsAvailable();						// Is this spawn destination available for selection?
 	void OnSpawnedNPC( CAI_BaseNPC *pNPC );	// Notify this spawn destination that an NPC has spawned here.
 
+	bool		IsRappelSpawn() { return m_bIsRappelSpawn; }
+
 	float		m_ReuseDelay;		// How long to be unavailable after being selected
 	string_t	m_RenameNPC;		// If not NULL, rename the NPC that spawns here to this.
 	float		m_TimeNextAvailable;// The time at which this destination will be available again.
+	bool		m_bIsRappelSpawn; // Only used by npc_maker_dynamic to tell that this spawn should start the NPC rappeling down
+	string_t	m_ChildModelName; // (Only used by npc_maker_dynamic) If set, the soldier will use a custom model instead of the default one.
 
 	COutputEvent	m_OnSpawnNPC;
 
@@ -179,6 +183,26 @@ protected:
 
 	ThreeStateYesNo_t	m_CriterionVisibility;
 	ThreeStateDist_t	m_CriterionDistance;
+};
+
+class CNPCMakerDynamic : public CNPCMaker
+{
+public:
+	DECLARE_CLASS(CNPCMakerDynamic, CNPCMaker);
+
+	CNPCMakerDynamic(void);
+
+	void MakerThink(void);
+	void Precache(void);
+
+	bool IsDepleted() { return false; }
+
+	virtual bool CanMakeNPC(bool bIgnoreSolidEntities);
+	virtual void MakeNPC(void);
+	virtual CNPCSpawnDestination* FindSpawnDestination();
+	virtual void DeathNotice(CBaseEntity* pVictim);
+
+	DECLARE_DATADESC();
 };
 
 #endif // MONSTERMAKER_H
