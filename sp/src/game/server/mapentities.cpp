@@ -481,6 +481,58 @@ void MapEntity_ParseAllEntities(const char *pMapData, IMapEntityFilter *pFilter,
 		pPointTemplate->FinishBuildingTemplates();
 	}
 
+	// Spawn additional entities
+	// hope this doesn't crash again
+	KeyValues* pMapAdd = new KeyValues("MapAdd");
+	char fileName[MAX_PATH];
+	// Big thanks to grizzledev on Source Engine discord
+	sprintf_s(fileName, MAX_PATH, "mapadd/%s.txt", gpGlobals->mapname.ToCStr());
+	if (pMapAdd->LoadFromFile(filesystem, fileName, "MOD"))
+	{
+		FOR_EACH_SUBKEY(pMapAdd, pEntityData)
+		{
+			if (nEntities < NUM_ENT_ENTRIES)
+			{
+				CBaseEntity* pEntity = CreateEntityByName(pEntityData->GetString("classname", "npc_combine_s"));
+				if (pEntity)
+				{
+					FOR_EACH_SUBKEY(pEntityData, kv)
+					{
+						if (!FStrEq(kv->GetName(), "id") || !FStrEq(kv->GetName(), "classname"))
+						{
+							pEntity->KeyValue(kv->GetName(), kv->GetString());
+						}
+					}
+
+					// In case it defaulted to npc_combine_s, spawn them with a MP7
+					// yeah im using they/them to refer to combines because they are trans
+					// as in transhuman
+					// okay i leave
+
+					// Combine soldier is fallback appearantly, silly
+					if (!pEntityData->FindKey("additionalequipment"))
+					{
+						pEntity->KeyValue("additionalequipment", "weapon_smg1");
+					}
+
+					pSpawnList[nEntities].m_pEntity = pEntity;
+					pSpawnList[nEntities].m_nDepth = 0;
+					pSpawnList[nEntities].m_pDeferredParent = NULL;
+					pSpawnList[nEntities].m_pDeferredParentAttachment = NULL;
+					pSpawnMapData[nEntities].m_pMapData = "";
+					pSpawnMapData[nEntities].m_iMapDataLength = 0;
+					nEntities++;
+
+					DevMsg("MapAdd: Created entity %s\n", pEntity->GetClassname());
+				}
+			}
+			else
+			{
+				Warning("MapAdd: Too many entities! Gordo is overloaded\n");
+			}
+		}
+	}
+
 	SpawnHierarchicalList( nEntities, pSpawnList, bActivateEntities );
 
 	delete [] pSpawnMapData;
@@ -539,6 +591,218 @@ void MapEntity_PrecacheEntity( const char *pEntData, int &nStringSize )
 	}
 }
 
+extern ConVar sv_custom_gamemode;
+
+ConVar npc_metropolice_early_canal_tweaks("npc_metropolice_early_canal_tweaks", "0");
+ConVar sv_patch_prop_vehicle_jeep("sv_patch_prop_vehicle_jeep", "0");
+ConVar sv_global_map_tweaks("sv_global_map_tweaks", "0");
+ConVar sv_d1_canals_08_elite_cops_map_tweak("sv_d1_canals_08_elite_cops_map_tweak", "0");
+ConVar sv_d3_c17_elite_cops_override("sv_d3_c17_elite_cops_override", "-1");
+ConVar sv_d3_c17_07_song_replacement("sv_d3_c17_07_song_replacement", "song31");
+ConVar sv_d3_c17_07_song_spawnflags("sv_d3_c17_07_song_spawnflags", "-1");
+ConVar sv_d3_c17_07_song_soundflags("sv_d3_c17_07_song_soundflags", "-1");
+ConVar sv_d3_c17_07_alyx_script_vscript("sv_d3_c17_07_alyx_script_vscript", "");
+
+const char* MapEntity_PatchPropVehicleJeep(char* className)
+{
+	if (sv_patch_prop_vehicle_jeep.GetBool() && FStrEq(className, "prop_vehicle_jeep"))
+		return "prop_vehicle_jeep_old";
+	return className;
+}
+
+const void MapEntity_InitWorldTweaks(CBaseEntity*& pEntity, const char* pEntData)
+{
+	CEntityMapData entData((char*)pEntData);
+	char className[MAPKEY_MAXLENGTH];
+
+	if (!entData.ExtractValue("classname", className))
+	{
+		Error("classname missing from entity!\n");
+	}
+
+	if (sv_global_map_tweaks.GetBool())
+	{
+		// Patch combine models to coast specific one in coast levels
+		if (V_strnicmp(gpGlobals->mapname.ToCStr(), "d2_coast_", strlen("d2_coast_")) == 0)
+		{
+			char modelName[MAPKEY_MAXLENGTH];
+			if (entData.ExtractValue("model", modelName) && FStrEq(modelName, "models/combine_soldier.mdl"))
+			{
+				if (FStrEq(pEntity->GetClassname(), "npc_combine_s") || FStrEq(pEntity->GetClassname(), "prop_ragdoll"))
+				{
+					pEntity->KeyValue("model", "models/combine_soldier_specialist.mdl");
+				}
+			}
+
+			if (FStrEq(gpGlobals->mapname.ToCStr(), "d2_coast_07"))
+			{
+				if (FStrEq(pEntity->GetClassname(), "npc_combine_s"))
+				{
+					if (pEntity->NameMatches("halt_guy"))
+					{
+						pEntity->KeyValue("additionalequipment", "weapon_pistol");
+						pEntity->KeyValue("tacticalvariant", "0");
+					}
+				}
+			}
+
+			if (FStrEq(gpGlobals->mapname.ToCStr(), "d2_coast_09"))
+			{
+				if (FStrEq(pEntity->GetClassname(), "npc_combine_s"))
+				{
+					bool shouldUseStealthDetection = false;
+					if (pEntity->NameMatches("tower_guy")
+						|| pEntity->NameMatches("tower_guy_2")
+						|| pEntity->NameMatches("combine_s_internal")
+						|| pEntity->NameMatches("combine_s_house"))
+					{
+						shouldUseStealthDetection = true;
+					}
+					if (shouldUseStealthDetection)
+					{
+						pEntity->KeyValue("ignoreunseenenemies", "1");
+						pEntity->KeyValue("vscripts", "npcs/stealth_behaviors");
+					}
+				}
+			}
+		}
+		// Patch combine ragdolls to prison specific one in prison levels
+		if (V_strnicmp(gpGlobals->mapname.ToCStr(), "d2_prison_", strlen("d2_prison_")) == 0)
+		{
+			char modelName[MAPKEY_MAXLENGTH];
+			if (entData.ExtractValue("model", modelName) && FStrEq(modelName, "models/combine_soldier.mdl"))
+			{
+				if (FStrEq(pEntity->GetClassname(), "prop_ragdoll"))
+				{
+					pEntity->KeyValue("model", "models/combine_soldier_prisonguard.mdl");
+				}
+			}
+		}
+
+		if (V_strnicmp(gpGlobals->mapname.ToCStr(), "d3_c17_", strlen("d3_c17_")) == 0)
+		{
+			if (FStrEq(className, "npc_metropolice"))
+			{
+				if (sv_d3_c17_elite_cops_override.GetInt() == 1)
+				{
+					char weaponName[MAPKEY_MAXLENGTH];
+					if (entData.ExtractValue("additionalequipment", weaponName) && FStrEq(weaponName, "weapon_smg1"))
+					{
+						pEntity->KeyValue("IsElite", "1");
+					}
+				}
+				else if (sv_d3_c17_elite_cops_override.GetInt() == 2)
+				{
+					pEntity->KeyValue("IsElite", "1");
+				}
+				else if (sv_d3_c17_elite_cops_override.GetInt() == 3)
+				{
+					pEntity->KeyValue("additionalequipment", "weapon_smg1");
+					pEntity->KeyValue("IsElite", "1");
+				}
+			}
+		}
+
+		if (FStrEq(gpGlobals->mapname.ToCStr(), "d1_canals_03") || FStrEq(gpGlobals->mapname.ToCStr(), "d1_canals_12"))
+		{
+			if (FStrEq(className, "npc_metropolice"))
+			{
+				char weaponName[MAPKEY_MAXLENGTH];
+				if (entData.ExtractValue("additionalequipment", weaponName) && FStrEq(weaponName, "weapon_smg1"))
+				{
+					pEntity->KeyValue("IsElite", "1");
+				}
+			}
+		}
+
+		if (sv_d1_canals_08_elite_cops_map_tweak.GetBool())
+		{
+			// Swap some of the outpost cops with elite variants
+			if (FStrEq(gpGlobals->mapname.ToCStr(), "d1_canals_08"))
+			{
+				if (FStrEq(className, "npc_metropolice"))
+				{
+					if (pEntity->NameMatches("warehouse_cop_with_manhack") || pEntity->NameMatches("npc_warehouse_assault*"))
+					{
+						char weaponName[MAPKEY_MAXLENGTH];
+						if (entData.ExtractValue("additionalequipment", weaponName) && FStrEq(weaponName, "weapon_smg1"))
+						{
+							pEntity->KeyValue("IsElite", "1");
+						}
+					}
+				}
+			}
+		}
+
+		if (FStrEq(gpGlobals->mapname.ToCStr(), "d1_trainstation_02"))
+		{
+			char keyName[MAPKEY_MAXLENGTH];
+			if (FStrEq(pEntity->GetClassname(), "func_door") && entData.ExtractValue("origin", keyName) && FStrEq(keyName, "-4122.5 -2254.5 139.99"))
+			{
+				pEntity->KeyValue("targetname", "ration_dispenser");
+				pEntity->KeyValue("vscripts", "world/ration_dispenser");
+			}
+
+			// So we can check if the player harmed any of the map-placed cops and citizens
+			if (FStrEq(pEntity->GetClassname(), "npc_metropolice") || FStrEq(pEntity->GetClassname(), "npc_citizen"))
+			{
+				pEntity->KeyValue("vscripts", "npcs/ai/events/react_to_attack");
+			}
+		}
+	}
+	if (npc_metropolice_early_canal_tweaks.GetBool())
+	{
+		if (FStrEq(pEntity->GetClassname(), "npc_metropolice") && FStrEq(gpGlobals->mapname.ToCStr(), "d1_canals_01"))
+		{
+			if (pEntity->NameMatches("arrest_police_1") || pEntity->NameMatches("arrest_police_2"))
+			{
+				pEntity->KeyValue("additionalequipment", "weapon_stunstick");
+			}
+			else if (pEntity->NameMatches("beat_cop1"))
+			{
+				pEntity->KeyValue("additionalequipment", "weapon_pistol");
+				pEntity->KeyValue("spawnflags", "2230272"); // 131072 + 2097152 + 2048
+			}
+		}
+
+		if (FStrEq(pEntity->GetClassname(), "npc_metropolice") && FStrEq(gpGlobals->mapname.ToCStr(), "d1_canals_07"))
+		{
+			if (pEntity->NameMatches("cop_room4_assault_*")
+				|| pEntity->NameMatches("cop_room4_turret")
+				|| pEntity->NameMatches("cop_room7_reinforcement_*")
+				|| pEntity->NameMatches("underground_npc_mc_sloperappel*")
+				|| pEntity->NameMatches("cop_apc_car_shoot")
+				|| pEntity->NameMatches("underground_npc_mc_lambdarappel*")
+				|| pEntity->NameMatches("underground_npc_mc_lambdarappel*"))
+			{
+				pEntity->KeyValue("IsElite", "1");
+			}
+		}
+	}
+	// Hook the d3_c17_07 song so we can modify it's message
+	if (FStrEq(gpGlobals->mapname.ToCStr(), "d3_c17_07"))
+	{
+		if (!FStrEq(sv_d3_c17_07_song_replacement.GetString(), "") && FStrEq(pEntity->GetClassname(), "ambient_generic") && pEntity->NameMatches("lcs_pregate02a_song"))
+		{
+			pEntity->KeyValue("message", sv_d3_c17_07_song_replacement.GetString());
+			if (!FStrEq(sv_d3_c17_07_song_spawnflags.GetString(), "") || !FStrEq(sv_d3_c17_07_song_spawnflags.GetString(), "-1"))
+			{
+				pEntity->KeyValue("spawnflags", sv_d3_c17_07_song_spawnflags.GetString());
+			}
+			if (!FStrEq(sv_d3_c17_07_song_soundflags.GetString(), "") || !FStrEq(sv_d3_c17_07_song_soundflags.GetString(), "-1"))
+			{
+				pEntity->KeyValue("soundflags", sv_d3_c17_07_song_soundflags.GetString());
+			}
+		}
+
+		// Allow us to hook into when Alyx begins hacking the thing
+		if (!FStrEq(sv_d3_c17_07_alyx_script_vscript.GetString(), "") && FStrEq(pEntity->GetClassname(), "scripted_sequence") && pEntity->NameMatches("alyx_atwork_seq"))
+		{
+			pEntity->KeyValue("vscripts", sv_d3_c17_07_alyx_script_vscript.GetString());
+		}
+	}
+}
+
 //-----------------------------------------------------------------------------
 // Purpose: Takes a block of character data as the input
 // Input  : pEntity - Receives the newly constructed entity, NULL on failure.
@@ -572,6 +836,12 @@ const char *MapEntity_ParseEntity(CBaseEntity *&pEntity, const char *pEntData, I
 		if (pEntity != NULL)
 		{
 			pEntity->ParseMapData(&entData);
+			// HACK: Since i want to remove my old code after i port the changes from that to this, i've decided
+			// to add this hacky solution to support HL2: World Tweaks without affecting Tactical Combat
+			if (FStrEq(sv_custom_gamemode.GetString(), "world_tweaks"))
+			{
+				MapEntity_InitWorldTweaks(pEntity, pEntData);
+			}
 		}
 		else
 		{
