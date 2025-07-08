@@ -593,10 +593,11 @@ void MapEntity_PrecacheEntity( const char *pEntData, int &nStringSize )
 
 extern ConVar sv_custom_gamemode;
 
-ConVar npc_metropolice_early_canal_tweaks("npc_metropolice_early_canal_tweaks", "0");
+// These are all from HL2:WT, since that old code was borked i'm scalvenging some crap from that
+ConVar npc_metropolice_early_canal_tweaks("npc_metropolice_early_canal_tweaks", "1");
 ConVar sv_patch_prop_vehicle_jeep("sv_patch_prop_vehicle_jeep", "0");
-ConVar sv_global_map_tweaks("sv_global_map_tweaks", "0");
-ConVar sv_d1_canals_08_elite_cops_map_tweak("sv_d1_canals_08_elite_cops_map_tweak", "0");
+ConVar sv_global_map_tweaks("sv_global_map_tweaks", "1");
+ConVar sv_d1_canals_08_elite_cops_map_tweak("sv_d1_canals_08_elite_cops_map_tweak", "1");
 ConVar sv_d3_c17_elite_cops_override("sv_d3_c17_elite_cops_override", "-1");
 ConVar sv_d3_c17_07_song_replacement("sv_d3_c17_07_song_replacement", "song31");
 ConVar sv_d3_c17_07_song_spawnflags("sv_d3_c17_07_song_spawnflags", "-1");
