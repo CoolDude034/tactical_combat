@@ -739,8 +739,6 @@ void CNPC_Citizen::SelectModel()
 		PrecacheAllOfType( CT_REBEL );
 		PrecacheAllOfType( CT_REBEL_HOSTILE );
 		PrecacheAllOfType( CT_COMBINE );
-		PrecacheAllOfType( CT_SECURITY );
-		PrecacheAllOfType( CT_EMPLOYEE );
 	}
 
 	const char *pszModelName = NULL;
@@ -964,12 +962,6 @@ void CNPC_Citizen::SelectExpressionType()
 	case CT_COMBINE:
 		m_ExpressionType = (CitizenExpressionTypes_t)RandomInt(CIT_EXP_SCARED, CIT_EXP_ANGRY);
 		break;
-	case CT_SECURITY:
-		m_ExpressionType = (CitizenExpressionTypes_t)RandomInt(CIT_EXP_SCARED, CIT_EXP_ANGRY);
-		break;
-	case CT_EMPLOYEE:
-		m_ExpressionType = (CitizenExpressionTypes_t)RandomInt(CIT_EXP_SCARED, CIT_EXP_ANGRY);
-		break;
 
 	case CT_DEFAULT:
 	case CT_UNIQUE:
@@ -1054,23 +1046,10 @@ string_t CNPC_Citizen::GetModelName() const
 //-----------------------------------------------------------------------------
 Class_T	CNPC_Citizen::Classify()
 {
-	// Gamemode overrides
-	if (FStrEq(sv_custom_gamemode.GetString(), "tactical_combat"))
-	{
-		if (m_Type == CT_REBEL)
-			return CLASS_PLAYER_ALLY;
-		if (m_Type == CT_SECURITY)
-			return CLASS_METROPOLICE;
-		return CLASS_CITIZEN_PASSIVE;
-	}
-	else if (FStrEq(sv_custom_gamemode.GetString(), "world_tweaks"))
-	{
-		// This is hacky, but it's so WT's citizentypes are also supported correctly
-		if (m_Type == CT_COMBINE)
-			return CLASS_COMBINE;
-		if (NameMatches("npc_rioter_*"))
-			return CLASS_CITIZEN_REBEL;
-	}
+	if (m_Type == CT_COMBINE)
+		return CLASS_COMBINE;
+	if (NameMatches("npc_rioter_*"))
+		return CLASS_CITIZEN_REBEL;
 	if (GlobalEntity_GetState("gordon_precriminal") == GLOBAL_ON)
 		return CLASS_CITIZEN_PASSIVE;
 
@@ -1441,38 +1420,32 @@ int CNPC_Citizen::SelectSchedule()
 	}
 #endif
 
-	if (m_Type == CT_COMBINE || m_Type == CT_SECURITY)
+	if (m_Type == CT_COMBINE)
 	{
-		// In stealth, guards will investigate sounds
-		if (GlobalEntity_GetState("stealth_mode") == GLOBAL_ON)
+		if (m_NPCState == NPC_STATE_ALERT || m_NPCState == NPC_STATE_IDLE)
 		{
-			if (m_NPCState == NPC_STATE_ALERT || m_NPCState == NPC_STATE_IDLE)
+			if (HasCondition(COND_HEAR_COMBAT))
 			{
-				if (HasCondition(COND_HEAR_COMBAT))
-				{
-					CSound* pSound = GetBestSound();
+				CSound* pSound = GetBestSound();
 
-					if (pSound && pSound->IsSoundType(SOUND_COMBAT))
+				if (pSound && pSound->IsSoundType(SOUND_COMBAT))
+				{
+					if (m_pSquad && m_pSquad->GetSquadMemberNearestTo(pSound->GetSoundReactOrigin()) == this && OccupyStrategySlot(SQUAD_SLOT_INVESTIGATE_SOUND))
 					{
-						if (m_pSquad && m_pSquad->GetSquadMemberNearestTo(pSound->GetSoundReactOrigin()) == this && OccupyStrategySlot(SQUAD_SLOT_INVESTIGATE_SOUND))
-						{
-							return SCHED_INVESTIGATE_SOUND;
-						}
+						return SCHED_INVESTIGATE_SOUND;
 					}
 				}
 			}
 		}
-		else
+
+		if (m_NPCState == NPC_STATE_COMBAT)
 		{
-			if (m_NPCState == NPC_STATE_COMBAT)
+			if (HasCondition(COND_LIGHT_DAMAGE) || HasCondition(COND_HEAVY_DAMAGE))
 			{
-				if (HasCondition(COND_LIGHT_DAMAGE) || HasCondition(COND_HEAVY_DAMAGE))
+				if (GetEnemy() != NULL && GetEnemy()->IsPlayer() && FInViewCone(GetEnemy()))
 				{
-					if (GetEnemy() != NULL && GetEnemy()->IsPlayer() && FInViewCone(GetEnemy()))
-					{
-						// I'm not equipped to deal with this!
-						return SCHED_TAKE_COVER_FROM_ENEMY;
-					}
+					// I'm not equipped to deal with this!
+					return SCHED_TAKE_COVER_FROM_ENEMY;
 				}
 			}
 		}
@@ -1879,10 +1852,7 @@ int CNPC_Citizen::TranslateSchedule( int scheduleType )
 					}
 				}
 			}
-		}
 
-		if (m_Type == CT_COMBINE || m_Type == CT_SECURITY)
-		{
 			if (GetEnemy() != NULL && GetEnemy()->IsPlayer())
 			{
 				// Take cover from the player if they are within 25.0 radius
