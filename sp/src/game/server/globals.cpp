@@ -25,5 +25,3 @@
 Vector			g_vecAttackDir;
 int				g_iSkillLevel;
 bool			g_fGameOver;
-
-ConVar sv_custom_gamemode("sv_custom_gamemode", "tactical_combat", FCVAR_GAMEDLL | FCVAR_HIDDEN);
