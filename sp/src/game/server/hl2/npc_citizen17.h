@@ -51,7 +51,15 @@ enum CitizenType_t
 	CT_DOWNTRODDEN,
 	CT_REFUGEE,
 	CT_REBEL,
-	CT_UNIQUE
+	CT_UNIQUE,
+
+	// WT types
+	CT_COMBINE, // HL2:WT combine security
+	CT_REBEL_HOSTILE, // HL2:WT hostile rebels
+
+	// Tactical Combat
+	CT_SECURITY, // Security Guards
+	CT_EMPLOYEE // Employees
 };
 
 //-----------------------------------------------------------------------------

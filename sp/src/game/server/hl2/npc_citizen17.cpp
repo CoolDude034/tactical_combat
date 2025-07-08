@@ -117,6 +117,14 @@ ConVar npc_citizen_resupplier_adjust_ammo("npc_citizen_resupplier_adjust_ammo", 
 ConVar npc_citizen_nocollide_player( "npc_citizen_nocollide_player", "0" );
 #endif
 
+extern ConVar sv_custom_gamemode;
+extern ConVar sk_npc_glock_chance;
+extern ConVar sk_npc_mp5_chance;
+extern ConVar sk_npc_remington_chance;
+
+string_t d2_prison_07 = AllocPooledString("d2_prison_07");
+string_t d3_c17_05 = AllocPooledString("d3_c17_05");
+
 #define ShouldAutosquad() (npc_citizen_auto_player_squad.GetBool())
 
 enum SquadSlot_T
@@ -307,6 +315,9 @@ static const char *g_ppszModelLocs[] =
 	"Group01",
 	"Group02",
 	"Group03%s",
+	"Combine",
+	"Security",
+	"Business"
 };
 
 #define IsExcludedHead( type, bMedic, iHead) false // see XBox codeline for an implementation
@@ -516,7 +527,7 @@ void CNPC_Citizen::PrecacheAllOfType( CitizenType_t type )
 		}
 	}
 
-	if ( m_Type == CT_REBEL )
+	if ( m_Type == CT_REBEL || m_Type == CT_REBEL_HOSTILE )
 	{
 		for ( i = 0; i < nHeads; ++i )
 		{
@@ -615,7 +626,45 @@ void CNPC_Citizen::Spawn()
 
 	m_flTimePlayerStare = FLT_MAX;
 
-	AddEFlags( EFL_NO_DISSOLVE | EFL_NO_MEGAPHYSCANNON_RAGDOLL | EFL_NO_PHYSCANNON_INTERACTION );
+	if (m_Type == CT_COMBINE)
+	{
+		AddEFlags(EFL_NO_DISSOLVE);
+		if (!HasContext("is_combine_security:1"))
+		{
+			AddContext("is_combine_security", "1"); // Give security unique responses
+		}
+		m_bDontPickupWeapons = true;
+
+		if (m_spawnEquipment == NULL_STRING || m_spawnEquipment == gm_isz_class_Pistol)
+		{
+			if (random->RandomFloat() < sk_npc_glock_chance.GetFloat())
+			{
+				m_spawnEquipment = AllocPooledString("weapon_glock18");
+			}
+		}
+		else if (m_spawnEquipment == gm_isz_class_Shotgun)
+		{
+			if (random->RandomFloat() < sk_npc_remington_chance.GetFloat())
+			{
+				m_spawnEquipment = AllocPooledString("weapon_remington870");
+			}
+		}
+		else if (m_spawnEquipment == gm_isz_class_SMG1)
+		{
+			if (random->RandomFloat() < sk_npc_mp5_chance.GetFloat())
+			{
+				m_spawnEquipment = AllocPooledString("weapon_mp5");
+			}
+		}
+		else
+		{
+			m_spawnEquipment = AllocPooledString("weapon_pistol");
+		}
+	}
+	else
+	{
+		AddEFlags(EFL_NO_DISSOLVE | EFL_NO_MEGAPHYSCANNON_RAGDOLL | EFL_NO_PHYSCANNON_INTERACTION);
+	}
 
 	NPCInit();
 
@@ -688,6 +737,10 @@ void CNPC_Citizen::SelectModel()
 		PrecacheAllOfType( CT_DOWNTRODDEN );
 		PrecacheAllOfType( CT_REFUGEE );
 		PrecacheAllOfType( CT_REBEL );
+		PrecacheAllOfType( CT_REBEL_HOSTILE );
+		PrecacheAllOfType( CT_COMBINE );
+		PrecacheAllOfType( CT_SECURITY );
+		PrecacheAllOfType( CT_EMPLOYEE );
 	}
 
 	const char *pszModelName = NULL;
@@ -716,7 +769,7 @@ void CNPC_Citizen::SelectModel()
 			{ "coast",			CT_REFUGEE		},
 			{ "prison",			CT_DOWNTRODDEN	},
 			{ "c17",			CT_REBEL		},
-			{ "citadel",		CT_DOWNTRODDEN	},
+			{ "citadel",		CT_COMBINE		},
 		};
 
 		char szMapName[256];
@@ -905,6 +958,18 @@ void CNPC_Citizen::SelectExpressionType()
 	case CT_REBEL:
 		m_ExpressionType = (CitizenExpressionTypes_t)RandomInt( CIT_EXP_SCARED, CIT_EXP_ANGRY );
 		break;
+	case CT_REBEL_HOSTILE:
+		m_ExpressionType = (CitizenExpressionTypes_t)RandomInt(CIT_EXP_SCARED, CIT_EXP_ANGRY);
+		break;
+	case CT_COMBINE:
+		m_ExpressionType = (CitizenExpressionTypes_t)RandomInt(CIT_EXP_SCARED, CIT_EXP_ANGRY);
+		break;
+	case CT_SECURITY:
+		m_ExpressionType = (CitizenExpressionTypes_t)RandomInt(CIT_EXP_SCARED, CIT_EXP_ANGRY);
+		break;
+	case CT_EMPLOYEE:
+		m_ExpressionType = (CitizenExpressionTypes_t)RandomInt(CIT_EXP_SCARED, CIT_EXP_ANGRY);
+		break;
 
 	case CT_DEFAULT:
 	case CT_UNIQUE:
@@ -989,6 +1054,23 @@ string_t CNPC_Citizen::GetModelName() const
 //-----------------------------------------------------------------------------
 Class_T	CNPC_Citizen::Classify()
 {
+	// Gamemode overrides
+	if (FStrEq(sv_custom_gamemode.GetString(), "tactical_combat"))
+	{
+		if (m_Type == CT_REBEL)
+			return CLASS_PLAYER_ALLY;
+		if (m_Type == CT_SECURITY)
+			return CLASS_METROPOLICE;
+		return CLASS_CITIZEN_PASSIVE;
+	}
+	else if (FStrEq(sv_custom_gamemode.GetString(), "world_tweaks"))
+	{
+		// This is hacky, but it's so WT's citizentypes are also supported correctly
+		if (m_Type == CT_COMBINE)
+			return CLASS_COMBINE;
+		if (NameMatches("npc_rioter_*"))
+			return CLASS_CITIZEN_REBEL;
+	}
 	if (GlobalEntity_GetState("gordon_precriminal") == GLOBAL_ON)
 		return CLASS_CITIZEN_PASSIVE;
 
@@ -1359,6 +1441,70 @@ int CNPC_Citizen::SelectSchedule()
 	}
 #endif
 
+	if (m_Type == CT_COMBINE || m_Type == CT_SECURITY)
+	{
+		// In stealth, guards will investigate sounds
+		if (GlobalEntity_GetState("stealth_mode") == GLOBAL_ON)
+		{
+			if (m_NPCState == NPC_STATE_ALERT || m_NPCState == NPC_STATE_IDLE)
+			{
+				if (HasCondition(COND_HEAR_COMBAT))
+				{
+					CSound* pSound = GetBestSound();
+
+					if (pSound && pSound->IsSoundType(SOUND_COMBAT))
+					{
+						if (m_pSquad && m_pSquad->GetSquadMemberNearestTo(pSound->GetSoundReactOrigin()) == this && OccupyStrategySlot(SQUAD_SLOT_INVESTIGATE_SOUND))
+						{
+							return SCHED_INVESTIGATE_SOUND;
+						}
+					}
+				}
+			}
+		}
+		else
+		{
+			if (m_NPCState == NPC_STATE_COMBAT)
+			{
+				if (HasCondition(COND_LIGHT_DAMAGE) || HasCondition(COND_HEAVY_DAMAGE))
+				{
+					if (GetEnemy() != NULL && GetEnemy()->IsPlayer() && FInViewCone(GetEnemy()))
+					{
+						// I'm not equipped to deal with this!
+						return SCHED_TAKE_COVER_FROM_ENEMY;
+					}
+				}
+			}
+		}
+	}
+
+	if (m_Type == CT_COMBINE || m_Type == CT_REBEL_HOSTILE)
+	{
+		if (HasCondition(COND_NEW_ENEMY))
+		{
+			CBaseEntity* pEnemy = GetEnemy();
+			bool bFirstContact = false;
+			float flTimeSinceFirstSeen = gpGlobals->curtime - GetEnemies()->FirstTimeSeen(pEnemy);
+
+			if (flTimeSinceFirstSeen < 3.0f)
+				bFirstContact = true;
+
+			if (m_pSquad && pEnemy)
+			{
+				if (HasCondition(COND_ENEMY_OCCLUDED))
+				{
+					if (!bFirstContact && OccupyStrategySlotRange(SQUAD_SLOT_ATTACK1, SQUAD_SLOT_ATTACK2))
+					{
+						if (random->RandomInt(0, 100) < 60)
+						{
+							return SCHED_ESTABLISH_LINE_OF_FIRE;
+						}
+					}
+				}
+			}
+		}
+	}
+
 #ifdef MAPBASE
 	if ( GetActiveWeapon() && EntIsClass(GetActiveWeapon(), gm_isz_class_RPG) )
 	{
@@ -1716,6 +1862,34 @@ int CNPC_Citizen::TranslateSchedule( int scheduleType )
 				{
 					return SCHED_CITIZEN_RANGE_ATTACK1_RPG;
 				}
+			}
+		}
+
+		if (m_Type == CT_COMBINE)
+		{
+			// Combine Security in d2_prison_07 will provide support by firing at the turrets
+			// Otherwise, they will advance to the target while shooting
+			if (gpGlobals->mapname == d2_prison_07)
+			{
+				if (GetEnemy() != NULL)
+				{
+					if (EntIsClass(GetEnemy(), gm_isz_class_FloorTurret) && GetEnemy()->NameMatches("turret_buddy*"))
+					{
+						return SCHED_COMBAT_FACE;
+					}
+				}
+			}
+		}
+
+		if (m_Type == CT_COMBINE || m_Type == CT_SECURITY)
+		{
+			if (GetEnemy() != NULL && GetEnemy()->IsPlayer())
+			{
+				// Take cover from the player if they are within 25.0 radius
+				float distSqEnemy = (GetEnemy()->GetAbsOrigin() - EyePosition()).LengthSqr();
+				if (distSqEnemy < 25.0 * 25.0 &&
+					((GetEnemy()->GetAbsOrigin()) - EyePosition()).LengthSqr() < distSqEnemy)
+					return SCHED_BACK_AWAY_FROM_ENEMY;
 			}
 		}
 		break;
