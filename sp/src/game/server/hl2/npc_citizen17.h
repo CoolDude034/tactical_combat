@@ -52,8 +52,8 @@ enum CitizenType_t
 	CT_REFUGEE,
 	CT_REBEL,
 	CT_UNIQUE,
-	CT_COMBINE,
-	CT_REBEL_HOSTILE
+	CT_SECURITY,
+	CT_EMPLOYEE
 };
 
 //-----------------------------------------------------------------------------
