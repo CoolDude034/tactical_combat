@@ -37,6 +37,7 @@
 ConVar sk_weapon_ar2_alt_fire_radius( "sk_weapon_ar2_alt_fire_radius", "10" );
 ConVar sk_weapon_ar2_alt_fire_duration( "sk_weapon_ar2_alt_fire_duration", "2" );
 ConVar sk_weapon_ar2_alt_fire_mass( "sk_weapon_ar2_alt_fire_mass", "150" );
+ConVar sk_weapon_ar2_alt_fire_disabled("sk_weapon_ar2_alt_fire_disabled", "0");
 
 //=========================================================
 //=========================================================
@@ -305,6 +306,9 @@ void CWeaponAR2::DelayedAttack( void )
 	if ( pOwner == NULL )
 		return;
 
+	if (sk_weapon_ar2_alt_fire_disabled.GetBool())
+		return;
+
 	// Deplete the clip completely
 	SendWeaponAnim( ACT_VM_SECONDARYATTACK );
 	m_flNextSecondaryAttack = pOwner->m_flNextAttack = gpGlobals->curtime + SequenceDuration();
@@ -364,6 +368,9 @@ void CWeaponAR2::DelayedAttack( void )
 void CWeaponAR2::SecondaryAttack( void )
 {
 	if ( m_bShotDelayed )
+		return;
+
+	if (sk_weapon_ar2_alt_fire_disabled.GetBool())
 		return;
 
 	// Cannot fire underwater
