@@ -210,7 +210,7 @@ enum PathfindingVariant_T
 #define bits_MEMORY_PAIN_HEAVY_SOUND		bits_MEMORY_CUSTOM2
 #define bits_MEMORY_PLAYER_HURT				bits_MEMORY_CUSTOM3
 
-LINK_ENTITY_TO_CLASS( npc_combine, CNPC_Combine );
+//LINK_ENTITY_TO_CLASS( npc_combine, CNPC_Combine );
 
 //---------------------------------------------------------
 // Save/Restore
