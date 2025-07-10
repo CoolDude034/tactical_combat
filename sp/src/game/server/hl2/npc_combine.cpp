@@ -93,6 +93,9 @@ ConVar npc_combine_hacked_gunpos_position_posZ("npc_combine_hacked_gunpos_positi
 ConVar npc_combine_move_and_shoot_delay("npc_combine_move_and_shoot_delay", "0.75", FCVAR_HIDDEN);
 
 ConVar npc_combine_disable_elite_alt_firing("npc_combine_disable_elite_alt_firing", "0");
+
+ConVar sv_all_combines_are_sayoris("sv_all_combines_are_sayoris", "0", FCVAR_HIDDEN | FCVAR_CHEAT | FCVAR_SPONLY);
+ConVar sv_all_combines_are_yuris("sv_all_combines_are_yuris", "0", FCVAR_HIDDEN | FCVAR_CHEAT | FCVAR_SPONLY);
 #endif
 
 #define COMBINE_SKIN_DEFAULT		0

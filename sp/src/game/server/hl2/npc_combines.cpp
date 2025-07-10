@@ -50,6 +50,9 @@ extern ConVar sk_plr_num_shotgun_pellets;
 //Whether or not the combine should spawn health on death
 ConVar	combine_spawn_health( "combine_spawn_health", "1" );
 
+extern ConVar sv_all_combines_are_sayoris;
+extern ConVar sv_all_combines_are_yuris;
+
 LINK_ENTITY_TO_CLASS( npc_combine_s, CNPC_CombineS );
 
 
@@ -63,6 +66,14 @@ extern Activity ACT_WALK_MARCH;
 //-----------------------------------------------------------------------------
 void CNPC_CombineS::Spawn( void )
 {
+	if (sv_all_combines_are_sayoris.GetBool())
+	{
+		SetModelName(MAKE_STRING("models/humans/ddlc/sayori_enemy.mdl"));
+	}
+	else if (sv_all_combines_are_yuris.GetBool())
+	{
+		SetModelName(MAKE_STRING("models/humans/ddlc/yuri_enemy.mdl"));
+	}
 	Precache();
 	SetModel( STRING( GetModelName() ) );
 
