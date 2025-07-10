@@ -127,7 +127,7 @@ ConVar  metropolice_charge("metropolice_charge", "1" );
 ConVar	metropolice_new_component_behavior("metropolice_new_component_behavior", "1");
 #endif
 
-extern float MAX_NUMBER_OF_CIVILIANS_TO_AVOID_SHOOTING;
+const float MAX_NUMBER_OF_CIVILIANS_TO_AVOID_SHOOTING = 512.0f;
 
 // Counts all civilians near the player and if there is alot, we don't shoot.
 static int CiviliansNearby()

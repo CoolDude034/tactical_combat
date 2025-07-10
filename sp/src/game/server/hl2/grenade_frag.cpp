@@ -607,6 +607,7 @@ void CGrenadeFrag::ExplodeSmokeGrenade(trace_t* pTrace, int bitsDamageType)
 	if (pSmokeCloud)
 	{
 		pSmokeCloud->SetAbsOrigin(GetAbsOrigin());
+		pSmokeCloud->SetName(MAKE_STRING("enemy_smokecloud"));
 		pSmokeCloud->KeyValue("InitialState", "1");
 		pSmokeCloud->KeyValue("BaseSpread", sk_smokegrenade_basespread.GetString());
 		pSmokeCloud->KeyValue("Speed", sk_smokegrenade_basespeed.GetString());
