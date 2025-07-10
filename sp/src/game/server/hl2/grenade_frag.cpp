@@ -14,9 +14,7 @@
 #ifdef MAPBASE
 #include "mapbase/ai_grenade.h"
 #endif
-#ifndef CLIENT_DLL
 #include "npc_combine.h"
-#endif
 
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"
@@ -33,10 +31,8 @@ ConVar sk_plr_dmg_fraggrenade	( "sk_plr_dmg_fraggrenade","0");
 ConVar sk_npc_dmg_fraggrenade	( "sk_npc_dmg_fraggrenade","0");
 ConVar sk_fraggrenade_radius	( "sk_fraggrenade_radius", "0");
 
-#ifndef CLIENT_DLL
 ConVar sk_flashgrenade_blind_time("sk_flashgrenade_blind_time", "25.0");
 ConVar sk_smokegrenade_duration("sk_smokegrenade_duration", "35.0");
-#endif
 
 #define GRENADE_MODEL "models/Weapons/w_grenade.mdl"
 
@@ -68,7 +64,6 @@ public:
 	void	SetPunted( bool punt ) { m_punted = punt; }
 	bool	WasPunted( void ) const { return m_punted; }
 
-#ifndef CLIENT_DLL
 	bool	IsFlashbang() { return m_iGrenadeType == GRENADE_TYPE_FLASHBANG; }
 	bool	IsSmokegren() { return m_iGrenadeType == GRENADE_TYPE_SMOKEGRENADE; }
 
@@ -77,7 +72,6 @@ public:
 	void	ExplodeFlashGrenade(trace_t* pTrace, int bitsDamageType);
 
 	void	SmokeThink();
-#endif
 
 	// this function only used in episodic.
 #if defined(HL2_EPISODIC) && 0 // FIXME: HandleInteraction() is no longer called now that base grenade derives from CBaseAnimating
@@ -111,9 +105,7 @@ BEGIN_DATADESC( CGrenadeFrag )
 	DEFINE_FIELD( m_combineSpawned, FIELD_BOOLEAN ),
 	DEFINE_FIELD( m_punted, FIELD_BOOLEAN ),
 
-#ifdef SERVER_DLL
 	DEFINE_KEYFIELD(m_iGrenadeType, FIELD_INTEGER, "GrenadeType"),
-#endif
 	
 	// Function Pointers
 	DEFINE_THINKFUNC( DelayThink ),
@@ -330,6 +322,8 @@ void CGrenadeFrag::Precache( void )
 	PrecacheModel( GRENADE_MODEL );
 
 	PrecacheScriptSound( "Grenade.Blip" );
+	PrecacheScriptSound( "TacticalCombat.FlashbangExplode" );
+	PrecacheScriptSound( "TacticalCombat.SmokeExplode" );
 
 	PrecacheModel( "sprites/redglow1.vmt" );
 	PrecacheModel( "sprites/bluelaser1.vmt" );
@@ -468,7 +462,6 @@ void CGrenadeFrag::InputSetTimer( inputdata_t &inputdata )
 	SetTimer( inputdata.value.Float(), inputdata.value.Float() - FRAG_GRENADE_WARN_TIME );
 }
 
-#ifndef CLIENT_DLL
 void CGrenadeFrag::Explode(trace_t* pTrace, int bitsDamageType)
 {
 	if (IsSmokegren())
@@ -519,7 +512,7 @@ void CGrenadeFrag::ExplodeFlashGrenade(trace_t* pTrace, int bitsDamageType)
 		}
 	}
 
-	EmitSound("BaseGrenade.FlashbangExplode");
+	EmitSound("TacticalCombat.FlashbangExplode");
 
 #ifdef MAPBASE
 	m_OnDetonate.FireOutput(GetThrower(), this);
@@ -571,7 +564,7 @@ void CGrenadeFrag::SmokeThink()
 		return;
 	}
 
-	EmitSound("BaseGrenade.SmokeExplode");
+	EmitSound("TacticalCombat.SmokeExplode");
 
 	Vector vecAbsOrigin = GetAbsOrigin();
 	CPASFilter filter(vecAbsOrigin);
@@ -612,7 +605,6 @@ void CGrenadeFrag::ExplodeSmokeGrenade(trace_t* pTrace, int bitsDamageType)
 
 #endif
 }
-#endif
 
 CBaseGrenade *Fraggrenade_Create( const Vector &position, const QAngle &angles, const Vector &velocity, const AngularImpulse &angVelocity, CBaseEntity *pOwner, float timer, bool combineSpawned )
 {
