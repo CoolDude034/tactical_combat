@@ -132,6 +132,11 @@ void CGrenadeFrag::Spawn( void )
 	{
 		m_flDamage		= sk_npc_dmg_fraggrenade.GetFloat();
 		m_DmgRadius		= sk_fraggrenade_radius.GetFloat();
+
+		if (GetOwnerEntity() && FStrEq(GetOwnerEntity()->GetClassname(), "npc_combine_s"))
+		{
+			m_bPreventPickup = true;
+		}
 	}
 
 	m_takedamage	= DAMAGE_YES;

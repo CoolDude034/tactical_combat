@@ -155,6 +155,8 @@ public:
 	float				m_flDetonateTime;			// Time at which to detonate.
 	float				m_flWarnAITime;				// Time at which to warn the AI
 
+	CNetworkVar(bool, m_bPreventPickup);			// prevent pickup, set by code
+
 protected:
 
 	CNetworkVar( float, m_flDamage );		// Damage to inflict.

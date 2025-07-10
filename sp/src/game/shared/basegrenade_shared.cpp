@@ -291,6 +291,7 @@ void CBaseGrenade::Event_Killed( const CTakeDamageInfo &info )
 //-----------------------------------------------------------------------------
 void CBaseGrenade::Use( CBaseEntity *pActivator, CBaseEntity *pCaller, USE_TYPE useType, float value )
 {
+	if (m_bPreventPickup) return;
 	// Support player pickup
 	if ( useType == USE_TOGGLE )
 	{
