@@ -32,7 +32,8 @@ ConVar sk_npc_dmg_fraggrenade	( "sk_npc_dmg_fraggrenade","0");
 ConVar sk_fraggrenade_radius	( "sk_fraggrenade_radius", "0");
 
 ConVar sk_flashgrenade_blind_time("sk_flashgrenade_blind_time", "15.0");
-ConVar sk_smokegrenade_duration("sk_smokegrenade_duration", "35.0");
+ConVar sk_smokegrenade_chance("sk_smokegrenade_chance", "0.25");
+//ConVar sk_smokegrenade_duration("sk_smokegrenade_duration", "35.0");
 
 #define GRENADE_MODEL "models/Weapons/w_grenade.mdl"
 
@@ -470,6 +471,17 @@ void CGrenadeFrag::Explode(trace_t* pTrace, int bitsDamageType)
 	{
 		ExplodeFlashGrenade(pTrace, bitsDamageType);
 	}
+	else if (GetThrower() && FStrEq(GetThrower()->GetClassname(), "npc_combine_s"))
+	{
+		if (random->RandomFloat() < sk_smokegrenade_chance.GetFloat())
+		{
+			ExplodeSmokeGrenade(pTrace, bitsDamageType);
+		}
+		else
+		{
+			ExplodeFlashGrenade(pTrace, bitsDamageType);
+		}
+	}
 	else
 	{
 		BaseClass::Explode(pTrace, bitsDamageType);
@@ -588,18 +600,6 @@ CBaseGrenade *Fraggrenade_Create( const Vector &position, const QAngle &angles, 
 	pGrenade->SetThrower( ToBaseCombatCharacter( pOwner ) );
 	pGrenade->m_takedamage = DAMAGE_EVENTS_ONLY;
 	pGrenade->SetCombineSpawned( combineSpawned );
-
-	if (combineSpawned)
-	{
-		if (random->RandomFloat() < 0.15F)
-		{
-			pGrenade->KeyValue("IsSmokegren", "1");
-		}
-		else
-		{
-			pGrenade->KeyValue("IsFlashbang", "1");
-		}
-	}
 
 	return pGrenade;
 }
