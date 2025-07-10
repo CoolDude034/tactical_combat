@@ -80,6 +80,10 @@ public:
 	virtual bool	IsCrouchedActivity( Activity activity );
 #endif
 
+	// If true, will spawn with a ballistic shield
+	bool		m_bIsShield;
+	CBaseEntity* pShield;
+
 	void Event_Killed( const CTakeDamageInfo &info );
 
 
@@ -113,6 +117,7 @@ public:
 
 	Class_T			Classify( void );
 	bool			IsElite() { return m_fIsElite; }
+	bool			IsShield() { return m_bIsShield; }
 #ifdef MAPBASE
 	bool			IsAltFireCapable();
 	bool			IsGrenadeCapable();

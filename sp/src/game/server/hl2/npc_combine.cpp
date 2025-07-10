@@ -93,7 +93,30 @@ ConVar npc_combine_hacked_gunpos_position_posZ("npc_combine_hacked_gunpos_positi
 ConVar npc_combine_move_and_shoot_delay("npc_combine_move_and_shoot_delay", "0.75", FCVAR_HIDDEN);
 
 ConVar npc_combine_disable_elite_alt_firing("npc_combine_disable_elite_alt_firing", "0");
+
+ConVar sk_shield_model("sk_shield_model", "models/shield.mdl", FCVAR_HIDDEN | FCVAR_SPONLY);
+ConVar sk_shield_offset_x("sk_shield_offset_x", "10.5", FCVAR_HIDDEN | FCVAR_SPONLY);
+ConVar sk_shield_offset_y("sk_shield_offset_y", "0", FCVAR_HIDDEN | FCVAR_SPONLY);
+ConVar sk_shield_offset_z("sk_shield_offset_z", "40.9", FCVAR_HIDDEN | FCVAR_SPONLY);
+ConVar sk_shield_despawn_t("sk_shield_despawn_t", "5", FCVAR_HIDDEN | FCVAR_SPONLY);
+ConVar sk_shield_attached_to_attachment("sk_shield_attached_to_attachment", "0", FCVAR_HIDDEN | FCVAR_SPONLY); // Do not set to 1
+ConVar sk_shield_attachment_point("sk_shield_attachment_point", "lefthand", FCVAR_HIDDEN | FCVAR_SPONLY);
+ConVar sk_shield_rotate_aim_angle_override("sk_shield_rotate_aim_angle_override", "0", FCVAR_HIDDEN | FCVAR_SPONLY);
+ConVar sk_shield_rotate_aim_angleX("sk_shield_rotate_aim_angleX", "0", FCVAR_HIDDEN | FCVAR_SPONLY);
+ConVar sk_shield_rotate_aim_angleY("sk_shield_rotate_aim_angleY", "0", FCVAR_HIDDEN | FCVAR_SPONLY);
+ConVar sk_shield_rotate_aim_angleZ("sk_shield_rotate_aim_angleZ", "0", FCVAR_HIDDEN | FCVAR_SPONLY);
+ConVar sk_shield_aiming_animation_override("sk_shield_aiming_animation_override", "-1", FCVAR_HIDDEN | FCVAR_SPONLY);
+
 #endif
+
+static void InterpolateAngles(const QAngle& src, const QAngle& dest, float factor, QAngle& out)
+{
+	out.Init(
+		AngleNormalize(src.x + AngleNormalize(dest.x - src.x) * factor),
+		AngleNormalize(src.y + AngleNormalize(dest.y - src.y) * factor),
+		AngleNormalize(src.z + AngleNormalize(dest.z - src.z) * factor)
+	);
+}
 
 #define COMBINE_SKIN_DEFAULT		0
 #define COMBINE_SKIN_SHOTGUNNER		1
@@ -288,6 +311,10 @@ DEFINE_FIELD( m_vecAltFireTarget, FIELD_VECTOR ),
 
 DEFINE_KEYFIELD( m_iTacticalVariant, FIELD_INTEGER, "tacticalvariant" ),
 DEFINE_KEYFIELD( m_iPathfindingVariant, FIELD_INTEGER, "pathfindingvariant" ),
+
+#ifdef MAPBASE
+DEFINE_KEYFIELD(m_bIsShield, FIELD_BOOLEAN, "IsShield"),
+#endif
 
 END_DATADESC()
 
@@ -521,6 +548,14 @@ void CNPC_Combine::Spawn( void )
 
 	CapabilitiesAdd( bits_CAP_NO_HIT_SQUADMATES );
 
+	if (IsShield())
+	{
+		CapabilitiesRemove(bits_CAP_DUCK);
+		CapabilitiesRemove(bits_CAP_INNATE_MELEE_ATTACK1);
+		m_iTacticalVariant = TACTICAL_VARIANT_DEFAULT;
+		m_spawnEquipment = AllocPooledString("weapon_pistol");
+	}
+
 	m_bFirstEncounter	= true;// this is true when the grunt spawns, because he hasn't encountered an enemy yet.
 
 	m_HackedGunPos = Vector(npc_combine_hacked_gunpos_position_posX.GetFloat(), npc_combine_hacked_gunpos_position_posY.GetFloat(), npc_combine_hacked_gunpos_position_posZ.GetFloat());
@@ -669,6 +704,45 @@ void CNPC_Combine::PrescheduleThink()
 			m_MoveAndShootOverlay.SuspendMoveAndShoot( 0 );
 		}
 	}
+
+	if (IsShield())
+	{
+		Vector offset;
+		offset.Init(sk_shield_offset_x.GetFloat(), sk_shield_offset_y.GetFloat(), sk_shield_offset_z.GetFloat());
+		pShield->SetLocalOrigin(offset);
+		if (sk_shield_rotate_aim_angle_override.GetBool())
+		{
+			if (GetEnemy() != NULL && pShield != NULL)
+			{
+				Vector vecToEnemy = GetEnemy()->WorldSpaceCenter() - WorldSpaceCenter();
+				VectorNormalize(vecToEnemy);
+				Vector forward;
+				AngleVectors(GetAbsAngles(), &forward);
+				float dot = DotProduct(vecToEnemy, forward);
+				if (dot > 0.5f)
+				{
+					QAngle desiredAngles(
+						sk_shield_rotate_aim_angleX.GetFloat(),
+						sk_shield_rotate_aim_angleY.GetFloat(),
+						sk_shield_rotate_aim_angleZ.GetFloat()
+					);
+
+					QAngle currentAngles = pShield->GetLocalAngles();
+					QAngle interpolated;
+
+					InterpolateAngles(currentAngles, desiredAngles, gpGlobals->frametime * 5.0f, interpolated);
+					pShield->SetLocalAngles(interpolated);
+				}
+				else
+				{
+					// Reset
+					QAngle interpolated;
+					InterpolateAngles(pShield->GetLocalAngles(), QAngle(0, 0, 0), gpGlobals->frametime * 5.0f, interpolated);
+					pShield->SetLocalAngles(interpolated);
+				}
+			}
+		}
+	}
 }
 
 #ifndef MAPBASE
@@ -803,6 +877,8 @@ bool CNPC_Combine::IsAltFireCapable( void )
 {
 	if (npc_combine_disable_elite_alt_firing.GetBool())
 		return false;
+	if (IsShield())
+		return false;
 	// The base class tells us if we're carrying an alt-fire-able weapon.
 	return (IsElite() || m_bAlternateCapable) && BaseClass::IsAltFireCapable();
 }
@@ -812,6 +888,8 @@ bool CNPC_Combine::IsAltFireCapable( void )
 //-----------------------------------------------------------------------------
 bool CNPC_Combine::IsGrenadeCapable( void )
 {
+	if (IsShield())
+		return false;
 	return !IsElite() || m_bAlternateCapable;
 }
 #endif
@@ -1952,6 +2030,8 @@ int CNPC_Combine::SelectCombatSchedule()
 	// ---------------------
 	if ( ( HasCondition ( COND_NO_PRIMARY_AMMO ) || HasCondition ( COND_LOW_PRIMARY_AMMO ) ) && !HasCondition( COND_CAN_MELEE_ATTACK1) )
 	{
+		if (IsShield())
+			return SCHED_RELOAD;
 		return SCHED_HIDE_AND_RELOAD;
 	}
 
@@ -2305,6 +2385,8 @@ int CNPC_Combine::SelectFailSchedule( int failedSchedule, int failedTask, AI_Tas
 //-----------------------------------------------------------------------------
 bool CNPC_Combine::ShouldChargePlayer()
 {
+	if (IsShield() && !IsLimitingHintGroups())
+		return true;
 	return GetEnemy() && GetEnemy()->IsPlayer() && PlayerHasMegaPhysCannon() && !IsLimitingHintGroups();
 }
 
