@@ -38,7 +38,7 @@ ConVar sk_smokegrenade_chance("sk_smokegrenade_chance", "0.25");
 ConVar sk_smokegrenade_duration("sk_smokegrenade_duration", "35.0");
 ConVar sk_smokegrenade_basespread("sk_smokegrenade_basespread", "20");
 ConVar sk_smokegrenade_basespeed("sk_smokegrenade_basespeed", "100");
-ConVar sk_smokegrenade_startsize("sk_smokegrenade_startsize", "30");
+ConVar sk_smokegrenade_startsize("sk_smokegrenade_startsize", "100");
 ConVar sk_smokegrenade_endsize("sk_smokegrenade_endsize", "100");
 ConVar sk_smokegrenade_rate("sk_smokegrenade_rate", "30");
 ConVar sk_smokegrenade_jetlength("sk_smokegrenade_jetlength", "200");
@@ -145,7 +145,8 @@ void CGrenadeFrag::Spawn( void )
 		m_flDamage		= sk_npc_dmg_fraggrenade.GetFloat();
 		m_DmgRadius		= sk_fraggrenade_radius.GetFloat();
 
-		if (GetOwnerEntity() && FStrEq(GetOwnerEntity()->GetClassname(), "npc_combine_s"))
+		//GetOwnerEntity() && FStrEq(GetOwnerEntity()->GetClassname(), "npc_combine_s")
+		if (IsSmokegren() || IsFlashbang()) // Allow map-spawned smoke or flashgrenades to be not pickupable
 		{
 			m_bPreventPickup = true;
 		}
@@ -617,6 +618,12 @@ void CGrenadeFrag::ExplodeSmokeGrenade(trace_t* pTrace, int bitsDamageType)
 		pFakeGrenade->SetAbsAngles(GetAbsAngles());
 		pFakeGrenade->SetModel(GRENADE_MODEL);
 		pFakeGrenade->SetCollisionGroup(COLLISION_GROUP_DEBRIS);
+
+		// Pull out of the wall a bit
+		if (pTrace->fraction != 1.0)
+		{
+			pFakeGrenade->SetAbsOrigin(pFakeGrenade->GetAbsOrigin() + pTrace->endpos + (pTrace->plane.normal * 0.6));
+		}
 
 		DispatchSpawn(pFakeGrenade);
 		pFakeGrenade->Activate();
