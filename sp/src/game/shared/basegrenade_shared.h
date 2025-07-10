@@ -28,7 +28,6 @@
 
 #define BASEGRENADE_EXPLOSION_VOLUME	1024
 
-#ifndef CLIENT_DLL
 enum GrenadeType
 {
 	GRENADE_TYPE_FRAG = 0,
@@ -36,7 +35,6 @@ enum GrenadeType
 	GRENADE_TYPE_FLASHBANG,
 	GRENADE_TYPE_SMOKEGRENADE
 };
-#endif
 
 class CTakeDamageInfo;
 
@@ -86,10 +84,8 @@ public:
 	virtual float		GetShakeAmplitude( void ) { return 25.0; }
 	virtual float		GetShakeRadius( void ) { return 750.0; }
 
-#ifndef CLIENT_DLL
 	bool	IsFlashbang() { return m_iGrenadeType == GRENADE_TYPE_FLASHBANG; }
 	bool	IsSmokegren() { return m_iGrenadeType == GRENADE_TYPE_SMOKEGRENADE; }
-#endif
 
 	// Damage accessors.
 	virtual float GetDamage()
@@ -159,8 +155,6 @@ public:
 	float				m_flDetonateTime;			// Time at which to detonate.
 	float				m_flWarnAITime;				// Time at which to warn the AI
 
-	// Tactical Combat: Grenade Type
-
 protected:
 
 	CNetworkVar( float, m_flDamage );		// Damage to inflict.
@@ -175,9 +169,7 @@ private:
 	CNetworkHandle( CBaseEntity, m_hThrower );					// Who threw this grenade
 	EHANDLE			m_hOriginalThrower;							// Who was the original thrower of this grenade
 
-#ifndef CLIENT_DLL
-	int m_iGrenadeType;
-#endif
+	CNetworkVar(int, m_iGrenadeType);
 
 	CBaseGrenade( const CBaseGrenade & ); // not defined, not accessible
 
