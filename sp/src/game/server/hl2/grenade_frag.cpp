@@ -160,12 +160,6 @@ void CGrenadeFrag::Spawn( void )
 	{
 		m_flDamage		= sk_npc_dmg_fraggrenade.GetFloat();
 		m_DmgRadius		= sk_fraggrenade_radius.GetFloat();
-
-		//GetOwnerEntity() && FStrEq(GetOwnerEntity()->GetClassname(), "npc_combine_s")
-		if (IsSmokegren() || IsFlashbang()) // Allow map-spawned smoke or flashgrenades or ones enemies throw to be not pickupable
-		{
-			m_bPreventPickup = true;
-		}
 	}
 
 	m_takedamage	= DAMAGE_YES;
