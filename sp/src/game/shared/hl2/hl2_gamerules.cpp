@@ -500,6 +500,43 @@ ConVar  alyx_darkness_force( "alyx_darkness_force", "0", FCVAR_CHEAT | FCVAR_REP
 	//-----------------------------------------------------------------------------
 	void CHalfLife2::PlayerSpawn( CBasePlayer *pPlayer )
 	{
+#ifndef CLIENT_DLL
+		KeyValues* pMapData = new KeyValues("MapData");
+		char fileName[MAX_PATH];
+		// Big thanks to grizzledev on Source Engine discord
+		sprintf_s(fileName, MAX_PATH, "maps/%s.txt", gpGlobals->mapname.ToCStr());
+		if (pMapData->LoadFromFile(filesystem, fileName, "GAME"))
+		{
+			KeyValues* pLoadoutData = pMapData->FindKey("LoadoutData");
+			if (pLoadoutData)
+			{
+				KeyValues* pWeaponInfo = pLoadoutData->FindKey("WeaponInfo");
+				if (pWeaponInfo)
+				{
+					FOR_EACH_SUBKEY(pWeaponInfo, kvSubKey)
+					{
+						if (kvSubKey)
+						{
+							pPlayer->GiveNamedItem(kvSubKey->GetName());
+						}
+					}
+				}
+
+				// Fuck it...Just give every ammo type
+				pPlayer->GiveAmmo(255, "Pistol");
+				pPlayer->GiveAmmo(255, "SMG1");
+				pPlayer->GiveAmmo(255, "AR2");
+				pPlayer->GiveAmmo(255, "357");
+				pPlayer->GiveAmmo(255, "Buckshot");
+				pPlayer->GiveAmmo(255, "XBowBolt");
+				pPlayer->GiveAmmo(255, "SniperRound");
+				pPlayer->GiveAmmo(255, "SniperPenetratedRound");
+
+				pPlayer->EquipSuit();
+			}
+			pMapData->deleteThis();
+		}
+#endif
 	}
 
 	//-----------------------------------------------------------------------------
