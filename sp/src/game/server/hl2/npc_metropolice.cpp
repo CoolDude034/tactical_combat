@@ -127,6 +127,27 @@ ConVar  metropolice_charge("metropolice_charge", "1" );
 ConVar	metropolice_new_component_behavior("metropolice_new_component_behavior", "1");
 #endif
 
+extern float MAX_NUMBER_OF_CIVILIANS_TO_AVOID_SHOOTING;
+
+// Counts all civilians near the player and if there is alot, we don't shoot.
+static int CiviliansNearby()
+{
+	int count = 0;
+	CBaseEntity* pEntity = NULL;
+	CBasePlayer* pPlayer = UTIL_GetLocalPlayerOrListenServerHost();
+	while ((pEntity = gEntList.FindEntityByClassname(pEntity, "npc_citizen")) != NULL)
+	{
+		if (!pPlayer)
+			continue;
+		float fDist = (pEntity->GetAbsOrigin() - pPlayer->GetAbsOrigin()).Length();
+		if (pEntity->Classify() == CLASS_CITIZEN_PASSIVE && fDist <= MAX_NUMBER_OF_CIVILIANS_TO_AVOID_SHOOTING)
+		{
+			count++;
+		}
+	}
+	return count;
+}
+
 // How many clips of pistol ammo a metropolice carries.
 #define METROPOLICE_NUM_CLIPS			5
 #define METROPOLICE_BURST_RELOAD_COUNT	20
@@ -4008,7 +4029,7 @@ int CNPC_MetroPolice::SelectCombatSchedule()
 			return SCHED_COMBAT_FACE;
 	}
 
-	if ( HasCondition( COND_TOO_CLOSE_TO_ATTACK ) )
+	if ( HasCondition( COND_TOO_CLOSE_TO_ATTACK ) || CiviliansNearby() > 0 )
 	{
 		return SCHED_BACK_AWAY_FROM_ENEMY;
 	}

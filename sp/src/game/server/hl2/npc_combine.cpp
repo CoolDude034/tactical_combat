@@ -118,6 +118,8 @@ static void InterpolateAngles(const QAngle& src, const QAngle& dest, float facto
 	);
 }
 
+const float MAX_NUMBER_OF_CIVILIANS_TO_AVOID_SHOOTING = 512.0f;
+
 #define COMBINE_SKIN_DEFAULT		0
 #define COMBINE_SKIN_SHOTGUNNER		1
 
@@ -1961,6 +1963,25 @@ void CNPC_Combine::AnnounceEnemyKill( CBaseEntity *pEnemy )
 #endif
 }
 
+// Counts all civilians near the player and if there is alot, we don't shoot.
+static int CiviliansNearby()
+{
+	int count = 0;
+	CBaseEntity* pEntity = NULL;
+	CBasePlayer* pPlayer = UTIL_GetLocalPlayerOrListenServerHost();
+	while ((pEntity = gEntList.FindEntityByClassname(pEntity, "npc_citizen")) != NULL)
+	{
+		if (!pPlayer)
+			continue;
+		float fDist = (pEntity->GetAbsOrigin() - pPlayer->GetAbsOrigin()).Length();
+		if (pEntity->Classify() == CLASS_CITIZEN_PASSIVE && fDist <= MAX_NUMBER_OF_CIVILIANS_TO_AVOID_SHOOTING)
+		{
+			count++;
+		}
+	}
+	return count;
+}
+
 //-----------------------------------------------------------------------------
 // Select the combat schedule
 //-----------------------------------------------------------------------------
@@ -1986,6 +2007,16 @@ int CNPC_Combine::SelectCombatSchedule()
 
 		if( flTimeSinceFirstSeen < 3.0f )
 			bFirstContact = true;
+
+		if (pEnemy)
+		{
+			// If there civs nearby, dont shoot the enemy to not cause casualties.
+			if (HasCondition(COND_CAN_RANGE_ATTACK1) && CiviliansNearby() > 0)
+#ifdef COMBINE_SOLDIER_USES_RESPONSE_SYSTEM
+				SpeakIfAllowed(TLK_CMB_CIVS);
+#endif
+				return SCHED_COMBAT_FACE;
+		}
 
 		if ( m_pSquad && pEnemy )
 		{
@@ -2027,7 +2058,7 @@ int CNPC_Combine::SelectCombatSchedule()
 				}
 
 				// First contact, and I'm solo, or not the squad leader.
-				if( HasCondition( COND_SEE_ENEMY ) && CanGrenadeEnemy() )
+				if( HasCondition( COND_SEE_ENEMY ) && CanGrenadeEnemy() && CiviliansNearby() == 0 )
 				{
 					if( OccupyStrategySlot( SQUAD_SLOT_GRENADE1 ) )
 					{
