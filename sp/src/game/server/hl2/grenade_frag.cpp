@@ -342,12 +342,10 @@ void CGrenadeFrag::Precache( void )
 {
 	if (IsSmokegren() && !FStrEq(sk_smokegrenade_modeloverride.GetString(), "-1"))
 	{
-		PrecacheScriptSound( "Enemies.FlashbangExplode" );
 		PrecacheModel( sk_smokegrenade_modeloverride.GetString() );
 	}
 	else if (IsFlashbang() && !FStrEq(sk_flashgrenade_modeloverride.GetString(), "-1"))
 	{
-		PrecacheScriptSound( "Enemies.SmokeExplode" );
 		PrecacheModel( sk_flashgrenade_modeloverride.GetString() );
 	}
 	else
@@ -356,6 +354,8 @@ void CGrenadeFrag::Precache( void )
 	}
 
 	PrecacheScriptSound( "Grenade.Blip" );
+	PrecacheScriptSound( "Enemies.FlashbangExplode" );
+	PrecacheScriptSound( "Enemies.SmokeExplode" );
 
 	PrecacheModel( "sprites/redglow1.vmt" );
 	PrecacheModel( "sprites/bluelaser1.vmt" );
