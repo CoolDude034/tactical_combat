@@ -1982,30 +1982,6 @@ static int CiviliansNearby()
 	return count;
 }
 
-string_t smokeNetName = AllocPooledString("enemy_smokecloud");
-
-static bool IsEnemyNearSmoke(CBaseEntity* pNPC, CBaseEntity* pEnemy)
-{
-	CBaseEntity* pSmoke = NULL;
-	while ((pSmoke = gEntList.FindEntityByClassname(pSmoke, "env_smokestack")) != NULL)
-	{
-		if (pSmoke->NameMatches(smokeNetName))
-		{
-			Vector smokeOrign = pSmoke->GetAbsOrigin();
-			Vector vecToSmoke = smokeOrign - pNPC->GetAbsOrigin();
-			Vector vecToEnemy = pEnemy->GetAbsOrigin() - pNPC->GetAbsOrigin();
-
-			if (vecToSmoke.Length() < vecToEnemy.Length() && vecToSmoke.Normalized().Dot(vecToEnemy.Normalized()) > 0.95f)
-			{
-				if ((smokeOrign - pEnemy->GetAbsOrigin()).Length() < 200.0f)
-					return true;
-			}
-		}
-	}
-
-	return false;
-}
-
 //-----------------------------------------------------------------------------
 // Select the combat schedule
 //-----------------------------------------------------------------------------
@@ -2041,11 +2017,6 @@ int CNPC_Combine::SelectCombatSchedule()
 				SpeakIfAllowed(TLK_CMB_CIVS);
 #endif
 				return SCHED_COMBAT_FACE;
-			}
-
-			if (HasCondition(COND_CAN_RANGE_ATTACK1) && IsEnemyNearSmoke(this, pEnemy))
-			{
-				return SCHED_SHOOT_ENEMY_COVER;
 			}
 		}
 
@@ -2427,6 +2398,15 @@ int CNPC_Combine::SelectSchedule( void )
 			{
 				if( m_bShouldPatrol || HasCondition( COND_COMBINE_SHOULD_PATROL ) )
 					return SCHED_COMBINE_PATROL;
+			}
+
+			// If there civs nearby, dont shoot the enemy to not cause casualties.
+			if (CiviliansNearby() > 0)
+			{
+#ifdef COMBINE_SOLDIER_USES_RESPONSE_SYSTEM
+				SpeakIfAllowed(TLK_CMB_CIVS);
+#endif
+				return SCHED_COMBAT_FACE;
 			}
 		}
 		break;
