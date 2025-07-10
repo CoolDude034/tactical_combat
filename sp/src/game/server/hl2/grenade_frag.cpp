@@ -457,10 +457,9 @@ void CGrenadeFrag::InputSetTimer( inputdata_t &inputdata )
 	SetTimer( inputdata.value.Float(), inputdata.value.Float() - FRAG_GRENADE_WARN_TIME );
 }
 
-extern short g_sModelIndexSmoke;
-extern short g_sModelIndexWExplosion;
-
 ConVar sk_flashgrenade_blind_time("sk_flashgrenade_blind_time", "25.0", FCVAR_GAMEDLL);
+
+short g_sModelIndexSmoke;
 
 void CGrenadeFrag::Explode(trace_t* pTrace, int bitsDamageType)
 {
