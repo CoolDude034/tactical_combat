@@ -1982,12 +1982,14 @@ static int CiviliansNearby()
 	return count;
 }
 
+string_t smokeNetName = AllocPooledString("enemy_smokecloud");
+
 static bool IsEnemyNearSmoke(CBaseEntity* pNPC, CBaseEntity* pEnemy)
 {
 	CBaseEntity* pSmoke = NULL;
 	while ((pSmoke = gEntList.FindEntityByClassname(pSmoke, "env_smokestack")) != NULL)
 	{
-		if (pSmoke->NameMatches(MAKE_STRING("enemy_smokecloud")))
+		if (pSmoke->NameMatches(smokeNetName))
 		{
 			Vector smokeOrign = pSmoke->GetAbsOrigin();
 			Vector vecToSmoke = smokeOrign - pNPC->GetAbsOrigin();
