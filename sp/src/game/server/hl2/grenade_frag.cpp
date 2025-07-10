@@ -14,7 +14,9 @@
 #ifdef MAPBASE
 #include "mapbase/ai_grenade.h"
 #endif
+#ifndef CLIENT_DLL
 #include "npc_combine.h"
+#endif
 
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"
@@ -30,6 +32,11 @@ const float GRENADE_COEFFICIENT_OF_RESTITUTION = 0.2f;
 ConVar sk_plr_dmg_fraggrenade	( "sk_plr_dmg_fraggrenade","0");
 ConVar sk_npc_dmg_fraggrenade	( "sk_npc_dmg_fraggrenade","0");
 ConVar sk_fraggrenade_radius	( "sk_fraggrenade_radius", "0");
+
+#ifndef CLIENT_DLL
+ConVar sk_flashgrenade_blind_time("sk_flashgrenade_blind_time", "25.0");
+ConVar sk_smokegrenade_duration("sk_smokegrenade_duration", "35.0");
+#endif
 
 #define GRENADE_MODEL "models/Weapons/w_grenade.mdl"
 
@@ -61,12 +68,16 @@ public:
 	void	SetPunted( bool punt ) { m_punted = punt; }
 	bool	WasPunted( void ) const { return m_punted; }
 
-	bool	IsFlashbang() { return m_bIsFlashbang; }
-	bool	IsSmokegren() { return m_bIsSmokegren; }
+#ifndef CLIENT_DLL
+	bool	IsFlashbang() { return m_iGrenadeType == GRENADE_TYPE_FLASHBANG; }
+	bool	IsSmokegren() { return m_iGrenadeType == GRENADE_TYPE_SMOKEGRENADE; }
 
 	void	Explode(trace_t* pTrace, int bitsDamageType);
 	void	ExplodeSmokeGrenade(trace_t* pTrace, int bitsDamageType);
 	void	ExplodeFlashGrenade(trace_t* pTrace, int bitsDamageType);
+
+	void	SmokeThink();
+#endif
 
 	// this function only used in episodic.
 #if defined(HL2_EPISODIC) && 0 // FIXME: HandleInteraction() is no longer called now that base grenade derives from CBaseAnimating
@@ -85,8 +96,7 @@ protected:
 	bool	m_punted;
 
 	// Tactical Combat additions
-	bool	m_bIsFlashbang;
-	bool	m_bIsSmokegren;
+	int m_iGrenadeType;
 };
 
 LINK_ENTITY_TO_CLASS( npc_grenade_frag, CGrenadeFrag );
@@ -101,8 +111,9 @@ BEGIN_DATADESC( CGrenadeFrag )
 	DEFINE_FIELD( m_combineSpawned, FIELD_BOOLEAN ),
 	DEFINE_FIELD( m_punted, FIELD_BOOLEAN ),
 
-	DEFINE_KEYFIELD(m_bIsFlashbang, FIELD_BOOLEAN, "IsFlashbang"),
-	DEFINE_KEYFIELD(m_bIsSmokegren, FIELD_BOOLEAN, "IsSmokegren"),
+#ifdef SERVER_DLL
+	DEFINE_KEYFIELD(m_iGrenadeType, FIELD_INTEGER, "GrenadeType"),
+#endif
 	
 	// Function Pointers
 	DEFINE_THINKFUNC( DelayThink ),
@@ -457,10 +468,7 @@ void CGrenadeFrag::InputSetTimer( inputdata_t &inputdata )
 	SetTimer( inputdata.value.Float(), inputdata.value.Float() - FRAG_GRENADE_WARN_TIME );
 }
 
-ConVar sk_flashgrenade_blind_time("sk_flashgrenade_blind_time", "25.0", FCVAR_GAMEDLL);
-
-short g_sModelIndexSmoke;
-
+#ifndef CLIENT_DLL
 void CGrenadeFrag::Explode(trace_t* pTrace, int bitsDamageType)
 {
 	if (IsSmokegren())
@@ -493,61 +501,25 @@ void CGrenadeFrag::ExplodeFlashGrenade(trace_t* pTrace, int bitsDamageType)
 	}
 
 	Vector vecAbsOrigin = GetAbsOrigin();
-	int contents = UTIL_PointContents(vecAbsOrigin);
 
-	if (pTrace->fraction != 1.0)
+	CPASFilter filter(vecAbsOrigin);
+
+	for (int i = 1; i <= gpGlobals->maxClients; i++)
 	{
-		Vector vecNormal = pTrace->plane.normal;
-		surfacedata_t* pdata = physprops->GetSurfaceData(pTrace->surface.surfaceProps);
-		CPASFilter filter(vecAbsOrigin);
-
-		for (int i = 1; i <= gpGlobals->maxClients; i++)
+		CBasePlayer* pPlayer = UTIL_PlayerByIndex(i);
+		if (!pPlayer)
 		{
-			CBasePlayer* pPlayer = UTIL_PlayerByIndex(i);
-			if (!pPlayer)
-			{
-				continue;
-			}
-
-			if (pPlayer->FInAimCone(vecAbsOrigin) && pPlayer->FVisible(vecAbsOrigin))
-			{
-				color32 flashColor;
-				flashColor.r = 255;
-				flashColor.g = 255;
-				flashColor.b = 255;
-				UTIL_ScreenFade(pPlayer, flashColor, gpGlobals->curtime, sk_flashgrenade_blind_time.GetFloat(), 0);
-			}
+			continue;
 		}
-	}
-	else
-	{
-		CPASFilter filter(vecAbsOrigin);
-		for (int i = 1; i <= gpGlobals->maxClients; i++)
-		{
-			CBasePlayer* pPlayer = UTIL_PlayerByIndex(i);
-			if (!pPlayer)
-			{
-				continue;
-			}
 
-			if (pPlayer->FInAimCone(vecAbsOrigin) && pPlayer->FVisible(vecAbsOrigin))
-			{
-				color32 flashColor;
-				flashColor.r = 255;
-				flashColor.g = 255;
-				flashColor.b = 255;
-				UTIL_ScreenFade(pPlayer, flashColor, gpGlobals->curtime, sk_flashgrenade_blind_time.GetFloat(), 0);
-			}
+		if (pPlayer->FInAimCone(vecAbsOrigin) && pPlayer->FVisible(vecAbsOrigin))
+		{
+			color32 flashColor = { 255, 255, 255, 255 };
+			UTIL_ScreenFade(pPlayer, flashColor, gpGlobals->curtime, sk_flashgrenade_blind_time.GetFloat(), FFADE_IN);
 		}
 	}
 
-#if !defined( CLIENT_DLL )
-	CSoundEnt::InsertSound(SOUND_COMBAT, GetAbsOrigin(), BASEGRENADE_EXPLOSION_VOLUME, 3.0);
-#endif
-
-	UTIL_DecalTrace(pTrace, "Scorch");
-
-	EmitSound("BaseGrenade.Explode");
+	EmitSound("BaseGrenade.FlashbangExplode");
 
 #ifdef MAPBASE
 	m_OnDetonate.FireOutput(GetThrower(), this);
@@ -560,7 +532,6 @@ void CGrenadeFrag::ExplodeFlashGrenade(trace_t* pTrace, int bitsDamageType)
 
 	AddEffects(EF_NODRAW);
 	SetAbsVelocity(vec3_origin);
-
 #if HL2_EPISODIC
 	// Because the grenade is zipped out of the world instantly, the EXPLOSION sound that it makes for
 	// the AI is also immediately destroyed. For this reason, we now make the grenade entity inert and
@@ -576,13 +547,46 @@ void CGrenadeFrag::ExplodeFlashGrenade(trace_t* pTrace, int bitsDamageType)
 #endif
 }
 
+void CGrenadeFrag::SmokeThink()
+{
+	if (gpGlobals->curtime > sk_smokegrenade_duration.GetFloat())
+	{
+		SetModelName(NULL_STRING);//invisible
+		AddSolidFlags(FSOLID_NOT_SOLID);
+
+		SetThink(&CBaseGrenade::SUB_Remove);
+		SetSolid(SOLID_NONE);
+		SetAbsVelocity(vec3_origin);
+#if HL2_EPISODIC
+		// Because the grenade is zipped out of the world instantly, the EXPLOSION sound that it makes for
+		// the AI is also immediately destroyed. For this reason, we now make the grenade entity inert and
+		// throw it away in 1/10th of a second instead of right away. Removing the grenade instantly causes
+		// intermittent bugs with env_microphones who are listening for explosions. They will 'randomly' not
+		// hear explosion sounds when the grenade is removed and the SoundEnt thinks (and removes the sound)
+		// before the env_microphone thinks and hears the sound.
+		SetNextThink(gpGlobals->curtime + 0.1);
+#else
+		SetNextThink(gpGlobals->curtime);
+#endif//HL2_EPISODIC
+		return;
+	}
+
+	EmitSound("BaseGrenade.SmokeExplode");
+
+	Vector vecAbsOrigin = GetAbsOrigin();
+	CPASFilter filter(vecAbsOrigin);
+	/*
+	te->Smoke(filter, -1.0,
+		&vecAbsOrigin,
+		g_sModelIndexSmokeGrenade, // I hate to do this, but it seems like i can't reuse existing one from basecombatweapon
+		m_DmgRadius * .03,
+		gpGlobals->frametime);
+	*/
+}
+
 void CGrenadeFrag::ExplodeSmokeGrenade(trace_t* pTrace, int bitsDamageType)
 {
 #if !defined( CLIENT_DLL )
-
-	SetModelName(NULL_STRING);//invisible
-	AddSolidFlags(FSOLID_NOT_SOLID);
-
 	m_takedamage = DAMAGE_NO;
 
 	// Pull out of the wall a bit
@@ -591,65 +595,24 @@ void CGrenadeFrag::ExplodeSmokeGrenade(trace_t* pTrace, int bitsDamageType)
 		SetAbsOrigin(pTrace->endpos + (pTrace->plane.normal * 0.6));
 	}
 
-	Vector vecAbsOrigin = GetAbsOrigin();
-	int contents = UTIL_PointContents(vecAbsOrigin);
-
-	if (pTrace->fraction != 1.0)
-	{
-		Vector vecNormal = pTrace->plane.normal;
-		surfacedata_t* pdata = physprops->GetSurfaceData(pTrace->surface.surfaceProps);
-		CPASFilter filter(vecAbsOrigin);
-
-		te->Smoke(filter, -1.0,
-			&vecAbsOrigin,
-			g_sModelIndexSmoke,
-			m_DmgRadius * .03,
-			gpGlobals->frametime);
-	}
-	else
-	{
-		CPASFilter filter(vecAbsOrigin);
-		te->Smoke(filter, -1.0,
-			&vecAbsOrigin,
-			g_sModelIndexSmoke,
-			m_DmgRadius * .03,
-			gpGlobals->frametime);
-	}
-
-#if !defined( CLIENT_DLL )
-	CSoundEnt::InsertSound(SOUND_COMBAT, GetAbsOrigin(), BASEGRENADE_EXPLOSION_VOLUME, 3.0);
-#endif
-
-	UTIL_DecalTrace(pTrace, "Scorch");
-
-	EmitSound("BaseGrenade.Explode");
-
 #ifdef MAPBASE
 	m_OnDetonate.FireOutput(GetThrower(), this);
 	m_OnDetonate_OutPosition.Set(GetAbsOrigin(), GetThrower(), this);
 #endif
 
-	SetThink(&CBaseGrenade::SUB_Remove);
+	SetThink(&CGrenadeFrag::SmokeThink);
 	SetTouch(NULL);
-	SetSolid(SOLID_NONE);
+	IPhysicsObject* pPhys = VPhysicsGetObject();
+	if (pPhys)
+	{
+		pPhys->EnableMotion(false);
+	}
 
-	AddEffects(EF_NODRAW);
-	SetAbsVelocity(vec3_origin);
-
-#if HL2_EPISODIC
-	// Because the grenade is zipped out of the world instantly, the EXPLOSION sound that it makes for
-	// the AI is also immediately destroyed. For this reason, we now make the grenade entity inert and
-	// throw it away in 1/10th of a second instead of right away. Removing the grenade instantly causes
-	// intermittent bugs with env_microphones who are listening for explosions. They will 'randomly' not
-	// hear explosion sounds when the grenade is removed and the SoundEnt thinks (and removes the sound)
-	// before the env_microphone thinks and hears the sound.
-	SetNextThink(gpGlobals->curtime + 0.1);
-#else
 	SetNextThink(gpGlobals->curtime);
-#endif//HL2_EPISODIC
 
 #endif
 }
+#endif
 
 CBaseGrenade *Fraggrenade_Create( const Vector &position, const QAngle &angles, const Vector &velocity, const AngularImpulse &angVelocity, CBaseEntity *pOwner, float timer, bool combineSpawned )
 {
@@ -662,6 +625,7 @@ CBaseGrenade *Fraggrenade_Create( const Vector &position, const QAngle &angles, 
 	pGrenade->m_takedamage = DAMAGE_EVENTS_ONLY;
 	pGrenade->SetCombineSpawned( combineSpawned );
 
+#ifdef SERVER_DLL
 	CNPC_Combine* pCombine = dynamic_cast<CNPC_Combine*>(pOwner);
 
 	if (pCombine)
@@ -675,6 +639,7 @@ CBaseGrenade *Fraggrenade_Create( const Vector &position, const QAngle &angles, 
 			pGrenade->KeyValue("IsSmokegren", "1");
 		}
 	}
+#endif
 
 	return pGrenade;
 }

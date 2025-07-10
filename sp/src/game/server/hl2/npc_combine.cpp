@@ -871,27 +871,13 @@ Class_T	CNPC_Combine::Classify ( void )
 	return CLASS_COMBINE;
 }
 
-bool CNPC_Combine::CNPC_Combine::HasFlashbang()
-{
-	if (m_iGrenadeType == 1)
-		return true;
-	return false;
-}
-
-bool CNPC_Combine::CNPC_Combine::HasSmokegren()
-{
-	if (m_iGrenadeType == 2)
-		return true;
-	return false;
-}
-
 #ifdef MAPBASE
 //-----------------------------------------------------------------------------
 // Purpose: Function for gauging whether we're capable of alt-firing.
 //-----------------------------------------------------------------------------
 bool CNPC_Combine::IsAltFireCapable( void )
 {
-	if (npc_combine_disable_elite_alt_firing.GetBool())
+	if (IsElite() && npc_combine_disable_elite_alt_firing.GetBool())
 		return false;
 	if (IsShield())
 		return false;

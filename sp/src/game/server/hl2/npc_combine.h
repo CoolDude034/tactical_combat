@@ -84,7 +84,7 @@ public:
 	bool		m_bIsShield;
 	CBaseEntity* pShield;
 
-	int			m_iGrenadeType;
+	int		m_iGrenadeType;
 
 	void Event_Killed( const CTakeDamageInfo &info );
 
@@ -120,8 +120,6 @@ public:
 	Class_T			Classify( void );
 	bool			IsElite() { return m_fIsElite; }
 	bool			IsShield() { return m_bIsShield; }
-	bool			HasFlashbang();
-	bool			HasSmokegren();
 #ifdef MAPBASE
 	bool			IsAltFireCapable();
 	bool			IsGrenadeCapable();
@@ -170,6 +168,9 @@ public:
 	WeaponProficiency_t CalcWeaponProficiency( CBaseCombatWeapon *pWeapon );
 	bool			HasShotgun();
 	bool			ActiveWeaponIsFullyLoaded();
+
+	bool			HasFlashbang() { return m_iGrenadeType == GRENADE_TYPE_FLASHBANG; }
+	bool			HasSmokegren() { return m_iGrenadeType == GRENADE_TYPE_SMOKEGRENADE; }
 
 	bool			HandleInteraction(int interactionType, void *data, CBaseCombatCharacter *sourceEnt);
 	const char*		GetSquadSlotDebugName( int iSquadSlot );
