@@ -15,6 +15,7 @@
 #include "mapbase/ai_grenade.h"
 #endif
 #include "npc_combine.h"
+#include "eventqueue.h"
 
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"
@@ -34,7 +35,16 @@ ConVar sk_fraggrenade_radius	( "sk_fraggrenade_radius", "0");
 
 ConVar sk_flashgrenade_blind_time("sk_flashgrenade_blind_time", "15.0");
 ConVar sk_smokegrenade_chance("sk_smokegrenade_chance", "0.25");
-//ConVar sk_smokegrenade_duration("sk_smokegrenade_duration", "35.0");
+ConVar sk_smokegrenade_duration("sk_smokegrenade_duration", "35.0");
+ConVar sk_smokegrenade_basespread("sk_smokegrenade_basespread", "20");
+ConVar sk_smokegrenade_basespeed("sk_smokegrenade_basespeed", "100");
+ConVar sk_smokegrenade_startsize("sk_smokegrenade_startsize", "30");
+ConVar sk_smokegrenade_endsize("sk_smokegrenade_endsize", "100");
+ConVar sk_smokegrenade_rate("sk_smokegrenade_rate", "30");
+ConVar sk_smokegrenade_jetlength("sk_smokegrenade_jetlength", "200");
+ConVar sk_smokegrenade_twist("sk_smokegrenade_twist", "5");
+ConVar sk_smokegrenade_color("sk_smokegrenade_color", "128 128 128");
+ConVar sk_smokegrenade_alpha("sk_smokegrenade_alpha", "255");
 
 #define GRENADE_MODEL "models/Weapons/w_grenade.mdl"
 
@@ -85,6 +95,8 @@ protected:
 	bool	m_inSolid;
 	bool	m_combineSpawned;
 	bool	m_punted;
+
+	CBaseEntity* pSmokeCloud;
 };
 
 LINK_ENTITY_TO_CLASS( npc_grenade_frag, CGrenadeFrag );
@@ -526,6 +538,22 @@ void CGrenadeFrag::ExplodeFlashGrenade(trace_t* pTrace, int bitsDamageType)
 
 	EmitSound("Enemies.FlashbangExplode");
 
+	CBaseEntity* pSpark = CreateEntityByName("env_spark");
+	if (pSpark)
+	{
+		pSpark->SetAbsOrigin(GetAbsOrigin());
+		pSpark->KeyValue("Magnitude", "1");
+		pSpark->KeyValue("MaxDelay", "0");
+		pSpark->KeyValue("TrailLength", "1");
+		pSpark->KeyValue("spawnflags", "256");
+
+		DispatchSpawn(pSpark);
+		pSpark->Activate();
+
+		g_EventQueue.AddEvent(pSpark, "StartSpark", 0.0F, NULL, NULL);
+		g_EventQueue.AddEvent(pSpark, "Kill", 0.2F, NULL, NULL);
+	}
+
 #ifdef MAPBASE
 	m_OnDetonate.FireOutput(GetThrower(), this);
 	m_OnDetonate_OutPosition.Set(GetAbsOrigin(), GetThrower(), this);
@@ -545,9 +573,6 @@ void CGrenadeFrag::ExplodeFlashGrenade(trace_t* pTrace, int bitsDamageType)
 void CGrenadeFrag::ExplodeSmokeGrenade(trace_t* pTrace, int bitsDamageType)
 {
 #if !defined( CLIENT_DLL )
-	SetModelName(NULL_STRING);//invisible
-	AddSolidFlags(FSOLID_NOT_SOLID);
-
 	m_takedamage = DAMAGE_NO;
 
 	// Pull out of the wall a bit
@@ -566,26 +591,45 @@ void CGrenadeFrag::ExplodeSmokeGrenade(trace_t* pTrace, int bitsDamageType)
 	{
 		pSmokeCloud->SetAbsOrigin(GetAbsOrigin());
 		pSmokeCloud->KeyValue("InitialState", "1");
-		pSmokeCloud->KeyValue("BaseSpread", "20");
-		pSmokeCloud->KeyValue("Speed", "100");
-		pSmokeCloud->KeyValue("StartSize", "30");
-		pSmokeCloud->KeyValue("EndSize", "100");
-		pSmokeCloud->KeyValue("Rate", "30");
-		pSmokeCloud->KeyValue("JetLength", "200");
-		pSmokeCloud->KeyValue("Twist", "5");
-		pSmokeCloud->KeyValue("RenderColor", "128 128 128");
-		pSmokeCloud->KeyValue("RenderAmt", "255");
+		pSmokeCloud->KeyValue("BaseSpread", sk_smokegrenade_basespread.GetString());
+		pSmokeCloud->KeyValue("Speed", sk_smokegrenade_basespeed.GetString());
+		pSmokeCloud->KeyValue("StartSize", sk_smokegrenade_startsize.GetString());
+		pSmokeCloud->KeyValue("EndSize", sk_smokegrenade_endsize.GetString());
+		pSmokeCloud->KeyValue("Rate", sk_smokegrenade_rate.GetString());
+		pSmokeCloud->KeyValue("JetLength", sk_smokegrenade_jetlength.GetString());
+		pSmokeCloud->KeyValue("Twist", sk_smokegrenade_twist.GetString());
+		pSmokeCloud->KeyValue("RenderColor", sk_smokegrenade_color.GetString());
+		pSmokeCloud->KeyValue("RenderAmt", sk_smokegrenade_alpha.GetString());
 		pSmokeCloud->KeyValue("SmokeMaterial", "particle/particle_smokegrenade1.vmt");
 
 		pSmokeCloud->EmitSound("Enemies.SmokeGrenade");
 
 		DispatchSpawn(pSmokeCloud);
 		pSmokeCloud->Activate();
-		pSmokeCloud->RunScript("EntFireByHandle(self, 'Kill', '', 1.25, null, null)");
+
+		g_EventQueue.AddEvent(pSmokeCloud, "Kill", sk_smokegrenade_duration.GetFloat(), NULL, NULL);
+	}
+
+	CBaseEntity* pFakeGrenade = CreateEntityByName("prop_dynamic_override");
+	if (pFakeGrenade)
+	{
+		pFakeGrenade->SetAbsOrigin(GetAbsOrigin());
+		pFakeGrenade->SetAbsAngles(GetAbsAngles());
+		pFakeGrenade->SetModel(GRENADE_MODEL);
+		pFakeGrenade->SetCollisionGroup(COLLISION_GROUP_DEBRIS);
+
+		DispatchSpawn(pFakeGrenade);
+		pFakeGrenade->Activate();
+
+		g_EventQueue.AddEvent(pFakeGrenade, "Kill", sk_smokegrenade_duration.GetFloat(), NULL, NULL);
 	}
 
 	SetThink(&CBaseGrenade::SUB_Remove);
 	SetTouch(NULL);
+	SetSolid(SOLID_NONE);
+
+	AddEffects(EF_NODRAW);
+	SetAbsVelocity(vec3_origin);
 
 	SetNextThink(gpGlobals->curtime);
 
