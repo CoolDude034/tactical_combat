@@ -312,9 +312,8 @@ DEFINE_FIELD( m_vecAltFireTarget, FIELD_VECTOR ),
 DEFINE_KEYFIELD( m_iTacticalVariant, FIELD_INTEGER, "tacticalvariant" ),
 DEFINE_KEYFIELD( m_iPathfindingVariant, FIELD_INTEGER, "pathfindingvariant" ),
 
-#ifdef MAPBASE
 DEFINE_KEYFIELD(m_bIsShield, FIELD_BOOLEAN, "IsShield"),
-#endif
+DEFINE_KEYFIELD(m_iGrenadeType, FIELD_INTEGER, "GrenadeType"),
 
 END_DATADESC()
 
@@ -870,6 +869,20 @@ bool CNPC_Combine::OverrideMoveFacing( const AILocalMoveGoal_t &move, float flIn
 Class_T	CNPC_Combine::Classify ( void )
 {
 	return CLASS_COMBINE;
+}
+
+bool CNPC_Combine::CNPC_Combine::HasFlashbang()
+{
+	if (m_iGrenadeType == 1)
+		return true;
+	return false;
+}
+
+bool CNPC_Combine::CNPC_Combine::HasSmokegren()
+{
+	if (m_iGrenadeType == 2)
+		return true;
+	return false;
 }
 
 #ifdef MAPBASE

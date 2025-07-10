@@ -84,6 +84,8 @@ public:
 	bool		m_bIsShield;
 	CBaseEntity* pShield;
 
+	int			m_iGrenadeType;
+
 	void Event_Killed( const CTakeDamageInfo &info );
 
 
@@ -118,6 +120,8 @@ public:
 	Class_T			Classify( void );
 	bool			IsElite() { return m_fIsElite; }
 	bool			IsShield() { return m_bIsShield; }
+	bool			HasFlashbang();
+	bool			HasSmokegren();
 #ifdef MAPBASE
 	bool			IsAltFireCapable();
 	bool			IsGrenadeCapable();
