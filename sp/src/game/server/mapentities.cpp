@@ -487,7 +487,7 @@ void MapEntity_ParseAllEntities(const char *pMapData, IMapEntityFilter *pFilter,
 	char fileName[MAX_PATH];
 	// Big thanks to grizzledev on Source Engine discord
 	sprintf_s(fileName, MAX_PATH, "mapadd/%s.txt", gpGlobals->mapname.ToCStr());
-	if (pMapAdd->LoadFromFile(filesystem, fileName, "MOD"))
+	if (pMapAdd->LoadFromFile(filesystem, fileName, "GAME"))
 	{
 		FOR_EACH_SUBKEY(pMapAdd, pEntityData)
 		{
