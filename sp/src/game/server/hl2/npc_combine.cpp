@@ -313,7 +313,6 @@ DEFINE_KEYFIELD( m_iTacticalVariant, FIELD_INTEGER, "tacticalvariant" ),
 DEFINE_KEYFIELD( m_iPathfindingVariant, FIELD_INTEGER, "pathfindingvariant" ),
 
 DEFINE_KEYFIELD(m_bIsShield, FIELD_BOOLEAN, "IsShield"),
-DEFINE_KEYFIELD(m_iGrenadeType, FIELD_INTEGER, "GrenadeType"),
 
 END_DATADESC()
 
