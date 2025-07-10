@@ -136,17 +136,16 @@ CGrenadeFrag::~CGrenadeFrag( void )
 
 void CGrenadeFrag::Spawn( void )
 {
+	Precache();
 	if (IsSmokegren() && !FStrEq(sk_smokegrenade_modeloverride.GetString(), "-1"))
 	{
-		SetModelName(MAKE_STRING(sk_smokegrenade_modeloverride.GetString()));
+		SetModel(sk_smokegrenade_modeloverride.GetString());
 	}
 	else if (IsFlashbang() && !FStrEq(sk_flashgrenade_modeloverride.GetString(), "-1"))
 	{
-		SetModelName(MAKE_STRING(sk_flashgrenade_modeloverride.GetString()));
+		SetModel(sk_flashgrenade_modeloverride.GetString());
 	}
-
-	Precache();
-	if (GetModelName() == NULL_STRING)
+	else
 	{
 		SetModel(GRENADE_MODEL);
 	}
@@ -341,11 +340,22 @@ void CGrenadeFrag::VPhysicsUpdate( IPhysicsObject *pPhysics )
 
 void CGrenadeFrag::Precache( void )
 {
-	PrecacheModel(GRENADE_MODEL);
+	if (IsSmokegren() && !FStrEq(sk_smokegrenade_modeloverride.GetString(), "-1"))
+	{
+		PrecacheScriptSound( "Enemies.FlashbangExplode" );
+		PrecacheModel( sk_smokegrenade_modeloverride.GetString() );
+	}
+	else if (IsFlashbang() && !FStrEq(sk_flashgrenade_modeloverride.GetString(), "-1"))
+	{
+		PrecacheScriptSound( "Enemies.SmokeExplode" );
+		PrecacheModel( sk_flashgrenade_modeloverride.GetString() );
+	}
+	else
+	{
+		PrecacheModel(GRENADE_MODEL);
+	}
 
 	PrecacheScriptSound( "Grenade.Blip" );
-	PrecacheScriptSound( "TacticalCombat.FlashbangExplode" );
-	PrecacheScriptSound( "TacticalCombat.SmokeExplode" );
 
 	PrecacheModel( "sprites/redglow1.vmt" );
 	PrecacheModel( "sprites/bluelaser1.vmt" );
