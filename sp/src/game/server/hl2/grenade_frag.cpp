@@ -33,7 +33,11 @@ ConVar sk_plr_dmg_fraggrenade	( "sk_plr_dmg_fraggrenade","0");
 ConVar sk_npc_dmg_fraggrenade	( "sk_npc_dmg_fraggrenade","0");
 ConVar sk_fraggrenade_radius	( "sk_fraggrenade_radius", "0");
 
+// Flash grenades
+ConVar sk_flashgrenade_modeloverride("sk_flashgrenade_modeloverride", "-1");
 ConVar sk_flashgrenade_blind_time("sk_flashgrenade_blind_time", "15.0");
+
+// Smoke grenades
 ConVar sk_smokegrenade_chance("sk_smokegrenade_chance", "0.25");
 ConVar sk_smokegrenade_duration("sk_smokegrenade_duration", "35.0");
 ConVar sk_smokegrenade_basespread("sk_smokegrenade_basespread", "20");
@@ -45,6 +49,7 @@ ConVar sk_smokegrenade_jetlength("sk_smokegrenade_jetlength", "200");
 ConVar sk_smokegrenade_twist("sk_smokegrenade_twist", "5");
 ConVar sk_smokegrenade_color("sk_smokegrenade_color", "128 128 128");
 ConVar sk_smokegrenade_alpha("sk_smokegrenade_alpha", "255");
+ConVar sk_smokegrenade_modeloverride("sk_smokegrenade_modeloverride", "-1");
 
 #define GRENADE_MODEL "models/Weapons/w_grenade.mdl"
 
@@ -131,9 +136,20 @@ CGrenadeFrag::~CGrenadeFrag( void )
 
 void CGrenadeFrag::Spawn( void )
 {
-	Precache( );
+	if (IsSmokegren() && !FStrEq(sk_smokegrenade_modeloverride.GetString(), "-1"))
+	{
+		SetModelName(MAKE_STRING(sk_smokegrenade_modeloverride.GetString()));
+	}
+	else if (IsFlashbang() && !FStrEq(sk_flashgrenade_modeloverride.GetString(), "-1"))
+	{
+		SetModelName(MAKE_STRING(sk_flashgrenade_modeloverride.GetString()));
+	}
 
-	SetModel( GRENADE_MODEL );
+	Precache();
+	if (GetModelName() == NULL_STRING)
+	{
+		SetModel(GRENADE_MODEL);
+	}
 
 	if( GetOwnerEntity() && GetOwnerEntity()->IsPlayer() )
 	{
@@ -146,7 +162,7 @@ void CGrenadeFrag::Spawn( void )
 		m_DmgRadius		= sk_fraggrenade_radius.GetFloat();
 
 		//GetOwnerEntity() && FStrEq(GetOwnerEntity()->GetClassname(), "npc_combine_s")
-		if (IsSmokegren() || IsFlashbang()) // Allow map-spawned smoke or flashgrenades to be not pickupable
+		if (IsSmokegren() || IsFlashbang()) // Allow map-spawned smoke or flashgrenades or ones enemies throw to be not pickupable
 		{
 			m_bPreventPickup = true;
 		}
@@ -331,7 +347,7 @@ void CGrenadeFrag::VPhysicsUpdate( IPhysicsObject *pPhysics )
 
 void CGrenadeFrag::Precache( void )
 {
-	PrecacheModel( GRENADE_MODEL );
+	PrecacheModel(GRENADE_MODEL);
 
 	PrecacheScriptSound( "Grenade.Blip" );
 	PrecacheScriptSound( "TacticalCombat.FlashbangExplode" );
@@ -614,16 +630,10 @@ void CGrenadeFrag::ExplodeSmokeGrenade(trace_t* pTrace, int bitsDamageType)
 	CBaseEntity* pFakeGrenade = CreateEntityByName("prop_dynamic_override");
 	if (pFakeGrenade)
 	{
-		pFakeGrenade->SetAbsOrigin(GetAbsOrigin());
+		pFakeGrenade->SetAbsOrigin(GetAbsOrigin() + Vector(0,0,2));
 		pFakeGrenade->SetAbsAngles(GetAbsAngles());
-		pFakeGrenade->SetModel(GRENADE_MODEL);
+		pFakeGrenade->SetModelName(GetModelName());
 		pFakeGrenade->SetCollisionGroup(COLLISION_GROUP_DEBRIS);
-
-		// Pull out of the wall a bit
-		if (pTrace->fraction != 1.0)
-		{
-			pFakeGrenade->SetAbsOrigin(pFakeGrenade->GetAbsOrigin() + pTrace->endpos + (pTrace->plane.normal * 0.6));
-		}
 
 		DispatchSpawn(pFakeGrenade);
 		pFakeGrenade->Activate();
