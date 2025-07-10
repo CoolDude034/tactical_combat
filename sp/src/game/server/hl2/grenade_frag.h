@@ -16,12 +16,4 @@ CBaseGrenade *Fraggrenade_Create( const Vector &position, const QAngle &angles, 
 bool	Fraggrenade_WasPunted( const CBaseEntity *pEntity );
 bool	Fraggrenade_WasCreatedByCombine( const CBaseEntity *pEntity );
 
-enum GrenadeType
-{
-	GRENADE_TYPE_FRAG = 0,
-
-	GRENADE_TYPE_FLASHBANG,
-	GRENADE_TYPE_SMOKEGRENADE
-};
-
 #endif // GRENADE_FRAG_H

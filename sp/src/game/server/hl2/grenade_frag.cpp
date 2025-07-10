@@ -26,6 +26,7 @@
 #define FRAG_GRENADE_WARN_TIME 1.5f
 
 const float GRENADE_COEFFICIENT_OF_RESTITUTION = 0.2f;
+const float FLASHGRENADE_MAX_DISTANCE = 1024.0f;
 
 ConVar sk_plr_dmg_fraggrenade	( "sk_plr_dmg_fraggrenade","0");
 ConVar sk_npc_dmg_fraggrenade	( "sk_npc_dmg_fraggrenade","0");
@@ -65,9 +66,6 @@ public:
 	void	SetPunted( bool punt ) { m_punted = punt; }
 	bool	WasPunted( void ) const { return m_punted; }
 
-	bool	IsFlashbang() { return m_iGrenadeType == GRENADE_TYPE_FLASHBANG; }
-	bool	IsSmokegren() { return m_iGrenadeType == GRENADE_TYPE_SMOKEGRENADE; }
-
 	void	Explode(trace_t* pTrace, int bitsDamageType);
 	void	ExplodeSmokeGrenade(trace_t* pTrace, int bitsDamageType);
 	void	ExplodeFlashGrenade(trace_t* pTrace, int bitsDamageType);
@@ -87,9 +85,6 @@ protected:
 	bool	m_inSolid;
 	bool	m_combineSpawned;
 	bool	m_punted;
-
-	// Tactical Combat additions
-	int m_iGrenadeType;
 };
 
 LINK_ENTITY_TO_CLASS( npc_grenade_frag, CGrenadeFrag );
@@ -511,9 +506,11 @@ void CGrenadeFrag::ExplodeFlashGrenade(trace_t* pTrace, int bitsDamageType)
 	{
 		CBasePlayer* pPlayer = UTIL_PlayerByIndex(i);
 		if (!pPlayer)
-		{
 			continue;
-		}
+
+		float dist = pPlayer->GetAbsOrigin().DistTo(vecAbsOrigin);
+		if (dist > FLASHGRENADE_MAX_DISTANCE)
+			continue;
 
 		if (pPlayer->FInAimCone(vecAbsOrigin) && pPlayer->FVisible(vecAbsOrigin))
 		{

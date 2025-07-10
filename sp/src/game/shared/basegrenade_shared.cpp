@@ -93,6 +93,10 @@ BEGIN_ENT_SCRIPTDESC( CBaseGrenade, CBaseAnimating, "The base class for grenades
 	DEFINE_SCRIPTFUNC( IsLive, "Whether or not the grenade has issued its DANGER sound to the world sound list yet." )
 	DEFINE_SCRIPTFUNC( GetWarnAITime, "Gets the time at which the grenade will warn/has warned AI." )
 
+	// Tactical Combat
+	DEFINE_SCRIPTFUNC(IsFlashbang, "Returns whether the grenade is a flashbang or not.")
+	DEFINE_SCRIPTFUNC(IsSmokegren, "Returns whether the grenade is a smoke grenade or not.")
+
 END_SCRIPTDESC();
 #endif
 
@@ -362,9 +366,12 @@ void CBaseGrenade::Detonate( void )
 
 	Explode( &tr, DMG_BLAST );
 
-	if ( GetShakeAmplitude() )
+	if (!IsFlashbang() && !IsSmokegren())
 	{
-		UTIL_ScreenShake( GetAbsOrigin(), GetShakeAmplitude(), 150.0, 1.0, GetShakeRadius(), SHAKE_START );
+		if (GetShakeAmplitude())
+		{
+			UTIL_ScreenShake(GetAbsOrigin(), GetShakeAmplitude(), 150.0, 1.0, GetShakeRadius(), SHAKE_START);
+		}
 	}
 }
 
