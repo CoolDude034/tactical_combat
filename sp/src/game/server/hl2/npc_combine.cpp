@@ -101,10 +101,10 @@ ConVar sk_shield_offset_z("sk_shield_offset_z", "40.9", FCVAR_HIDDEN | FCVAR_SPO
 ConVar sk_shield_despawn_t("sk_shield_despawn_t", "5", FCVAR_HIDDEN | FCVAR_SPONLY);
 ConVar sk_shield_attached_to_attachment("sk_shield_attached_to_attachment", "0", FCVAR_HIDDEN | FCVAR_SPONLY); // Do not set to 1
 ConVar sk_shield_attachment_point("sk_shield_attachment_point", "lefthand", FCVAR_HIDDEN | FCVAR_SPONLY);
-ConVar sk_shield_rotate_aim_angle_override("sk_shield_rotate_aim_angle_override", "0", FCVAR_HIDDEN | FCVAR_SPONLY);
-ConVar sk_shield_rotate_aim_angleX("sk_shield_rotate_aim_angleX", "0", FCVAR_HIDDEN | FCVAR_SPONLY);
+ConVar sk_shield_rotate_aim_angle_override("sk_shield_rotate_aim_angle_override", "1", FCVAR_HIDDEN | FCVAR_SPONLY);
+ConVar sk_shield_rotate_aim_angleX("sk_shield_rotate_aim_angleX", "45", FCVAR_HIDDEN | FCVAR_SPONLY);
 ConVar sk_shield_rotate_aim_angleY("sk_shield_rotate_aim_angleY", "0", FCVAR_HIDDEN | FCVAR_SPONLY);
-ConVar sk_shield_rotate_aim_angleZ("sk_shield_rotate_aim_angleZ", "0", FCVAR_HIDDEN | FCVAR_SPONLY);
+ConVar sk_shield_rotate_aim_angleZ("sk_shield_rotate_aim_angleZ", "90", FCVAR_HIDDEN | FCVAR_SPONLY);
 ConVar sk_shield_aiming_animation_override("sk_shield_aiming_animation_override", "-1", FCVAR_HIDDEN | FCVAR_SPONLY);
 
 #endif
@@ -551,7 +551,10 @@ void CNPC_Combine::Spawn( void )
 	if (IsShield())
 	{
 		CapabilitiesRemove(bits_CAP_DUCK);
-		CapabilitiesRemove(bits_CAP_INNATE_MELEE_ATTACK1);
+		if (sk_shield_aiming_animation_override.GetInt() == -1)
+		{
+			CapabilitiesRemove(bits_CAP_INNATE_MELEE_ATTACK1);
+		}
 		m_iTacticalVariant = TACTICAL_VARIANT_DEFAULT;
 		m_spawnEquipment = AllocPooledString("weapon_pistol");
 	}
@@ -1781,6 +1784,32 @@ Activity CNPC_Combine::NPC_TranslateActivity( Activity eNewActivity )
 			eNewActivity = ACT_RUN_PROTECTED;
 	}
 #endif
+
+	if (sk_shield_aiming_animation_override.GetInt() != -1 && sk_shield_aiming_animation_override.GetInt() == 1)
+	{
+		switch (eNewActivity)
+		{
+		case ACT_IDLE:
+			eNewActivity = ACT_IDLE_ANGRY;
+			break;
+
+		case ACT_WALK:
+			eNewActivity = ACT_WALK_AIM;
+			break;
+
+		case ACT_RUN:
+			eNewActivity = ACT_RUN_AIM;
+			break;
+
+		case ACT_RANGE_ATTACK1:
+			eNewActivity = ACT_SHIELD_ATTACK;
+			break;
+
+		case ACT_MELEE_ATTACK1:
+			eNewActivity = ACT_SHIELD_KNOCKBACK;
+			break;
+		}
+	}
 
 	return BaseClass::NPC_TranslateActivity( eNewActivity );
 }
