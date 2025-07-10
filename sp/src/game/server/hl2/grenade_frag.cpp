@@ -72,7 +72,7 @@ public:
 	void	SetTimer( float detonateDelay, float warnDelay );
 	void	SetVelocity( const Vector &velocity, const AngularImpulse &angVelocity );
 	int		OnTakeDamage( const CTakeDamageInfo &inputInfo );
-	void	BlipSound() { EmitSound( "Grenade.Blip" ); }
+	void	BlipSound();
 	void	DelayThink();
 	void	VPhysicsUpdate( IPhysicsObject *pPhysics );
 	void	OnPhysGunPickup( CBasePlayer *pPhysGunUser, PhysGunPickup_t reason );
@@ -355,6 +355,7 @@ void CGrenadeFrag::Precache( void )
 
 	PrecacheScriptSound( "Grenade.Blip" );
 	PrecacheScriptSound( "Enemies.FlashbangExplode" );
+	PrecacheScriptSound( "Enemies.FlashbangBeep" );
 	PrecacheScriptSound( "Enemies.SmokeExplode" );
 
 	PrecacheModel( "sprites/redglow1.vmt" );
@@ -431,6 +432,18 @@ void CGrenadeFrag::DelayThink()
 	}
 
 	SetNextThink( gpGlobals->curtime + 0.1 );
+}
+
+void CGrenadeFrag::BlipSound()
+{
+	if (IsFlashbang())
+	{
+		EmitSound("Enemies.FlashbangBeep");
+	}
+	else
+	{
+		EmitSound("Grenade.Blip");
+	}
 }
 
 void CGrenadeFrag::SetVelocity( const Vector &velocity, const AngularImpulse &angVelocity )
@@ -550,14 +563,13 @@ void CGrenadeFrag::ExplodeFlashGrenade(trace_t* pTrace, int bitsDamageType)
 		if (dist > FLASHGRENADE_MAX_DISTANCE)
 			continue;
 
-		if (pPlayer->FInAimCone(vecAbsOrigin) && pPlayer->FVisible(vecAbsOrigin))
+		if (pPlayer->FInAimCone(vecAbsOrigin))
 		{
 			color32 flashColor = { 255, 255, 255, 255 };
 			UTIL_ScreenFade(pPlayer, flashColor, gpGlobals->curtime, sk_flashgrenade_blind_time.GetFloat(), FFADE_IN);
+			EmitSound("Enemies.FlashbangExplode");
 		}
 	}
-
-	EmitSound("Enemies.FlashbangExplode");
 
 	CBaseEntity* pSpark = CreateEntityByName("env_spark");
 	if (pSpark)
@@ -611,7 +623,6 @@ void CGrenadeFrag::ExplodeSmokeGrenade(trace_t* pTrace, int bitsDamageType)
 	if (pSmokeCloud)
 	{
 		pSmokeCloud->SetAbsOrigin(GetAbsOrigin());
-		pSmokeCloud->SetName(MAKE_STRING("enemy_smokecloud"));
 		pSmokeCloud->KeyValue("InitialState", "1");
 		pSmokeCloud->KeyValue("BaseSpread", sk_smokegrenade_basespread.GetString());
 		pSmokeCloud->KeyValue("Speed", sk_smokegrenade_basespeed.GetString());
