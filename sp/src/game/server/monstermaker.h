@@ -36,6 +36,8 @@ public:
 	bool IsAvailable();						// Is this spawn destination available for selection?
 	void OnSpawnedNPC( CAI_BaseNPC *pNPC );	// Notify this spawn destination that an NPC has spawned here.
 
+	void		Precache();
+
 	bool		IsRappelSpawn() { return m_bIsRappelSpawn; }
 
 	float		m_ReuseDelay;		// How long to be unavailable after being selected

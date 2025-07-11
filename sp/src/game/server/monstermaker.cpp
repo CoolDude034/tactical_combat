@@ -17,6 +17,7 @@
 #include "mapentities.h"
 #include "IEffects.h"
 #include "props.h"
+#include "globalstate.h"
 
 #include "point_template.h"
 
@@ -53,6 +54,18 @@ CNPCSpawnDestination::CNPCSpawnDestination()
 {
 	// Available right away, the first time.
 	m_TimeNextAvailable = gpGlobals->curtime;
+}
+
+//---------------------------------------------------------
+// Purpose: Overriden to precache model overrides
+//---------------------------------------------------------
+void CNPCSpawnDestination::Precache()
+{
+	if (m_ChildModelName != NULL_STRING)
+	{
+		PrecacheModel(m_ChildModelName.ToCStr());
+	}
+	BaseClass::Precache();
 }
 
 //---------------------------------------------------------
@@ -1105,7 +1118,7 @@ void CTemplateNPCMaker::InputSetMinimumSpawnDistance( inputdata_t &inputdata )
 
 
 ConVar dyn_spawner_weapon_slot1("dyn_spawner_weapon_slot1", "weapon_smg1", FCVAR_HIDDEN);
-ConVar dyn_spawner_weapon_slot2("dyn_spawner_weapon_slot2", "weapon_mp5", FCVAR_HIDDEN);
+ConVar dyn_spawner_weapon_slot2("dyn_spawner_weapon_slot2", "weapon_smg1", FCVAR_HIDDEN);
 ConVar dyn_spawner_weapon_slot3("dyn_spawner_weapon_slot3", "weapon_shotgun", FCVAR_HIDDEN);
 ConVar dyn_spawner_weapon_slot4("dyn_spawner_weapon_slot4", "weapon_ar2", FCVAR_HIDDEN);
 
@@ -1166,6 +1179,10 @@ void CNPCMakerDynamic::DeathNotice(CBaseEntity* pVictim)
 bool CNPCMakerDynamic::CanMakeNPC(bool bIgnoreSolidEntities)
 {
 	if (ai_inhibit_spawners.GetBool())
+		return false;
+
+	// Don't spawn stuff while we're in stealth
+	if (GlobalEntity_GetState("stealth_mode") == GLOBAL_ON)
 		return false;
 
 	if (dyn_spawner_spawn_cap.GetInt() > 0 && g_numNPCs >= dyn_spawner_spawn_cap.GetInt())
