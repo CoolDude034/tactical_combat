@@ -36,6 +36,7 @@ ConVar sk_fraggrenade_radius	( "sk_fraggrenade_radius", "0");
 // Flash grenades
 ConVar sk_flashgrenade_modeloverride("sk_flashgrenade_modeloverride", "-1");
 ConVar sk_flashgrenade_blind_time("sk_flashgrenade_blind_time", "15.0");
+ConVar sk_flashgrenade_chance("sk_flashgrenade_chance", "0.25");
 
 // Smoke grenades
 ConVar sk_smokegrenade_chance("sk_smokegrenade_chance", "0.25");
@@ -517,6 +518,7 @@ void CGrenadeFrag::Explode(trace_t* pTrace, int bitsDamageType)
 	{
 		ExplodeFlashGrenade(pTrace, bitsDamageType);
 	}
+	/*
 	else if (GetThrower() && FStrEq(GetThrower()->GetClassname(), "npc_combine_s"))
 	{
 		if (random->RandomFloat() < sk_smokegrenade_chance.GetFloat())
@@ -528,6 +530,7 @@ void CGrenadeFrag::Explode(trace_t* pTrace, int bitsDamageType)
 			ExplodeFlashGrenade(pTrace, bitsDamageType);
 		}
 	}
+	*/
 	else
 	{
 		BaseClass::Explode(pTrace, bitsDamageType);
@@ -672,13 +675,31 @@ void CGrenadeFrag::ExplodeSmokeGrenade(trace_t* pTrace, int bitsDamageType)
 CBaseGrenade *Fraggrenade_Create( const Vector &position, const QAngle &angles, const Vector &velocity, const AngularImpulse &angVelocity, CBaseEntity *pOwner, float timer, bool combineSpawned )
 {
 	// Don't set the owner here, or the player can't interact with grenades he's thrown
-	CGrenadeFrag *pGrenade = (CGrenadeFrag *)CBaseEntity::Create( "npc_grenade_frag", position, angles, pOwner );
-	
-	pGrenade->SetTimer( timer, timer - FRAG_GRENADE_WARN_TIME );
-	pGrenade->SetVelocity( velocity, angVelocity );
-	pGrenade->SetThrower( ToBaseCombatCharacter( pOwner ) );
+	//CGrenadeFrag* pGrenade = (CGrenadeFrag*)CBaseEntity::Create("npc_grenade_frag", position, angles, pOwner);
+	CGrenadeFrag* pGrenade = (CGrenadeFrag*)CreateEntityByName("npc_grenade_frag");
+	pGrenade->SetAbsOrigin(position);
+	pGrenade->SetAbsAngles(angles);
+	pGrenade->SetOwnerEntity(pOwner);
+
+	pGrenade->SetTimer(timer, timer - FRAG_GRENADE_WARN_TIME);
+	pGrenade->SetVelocity(velocity, angVelocity);
+	pGrenade->SetThrower(ToBaseCombatCharacter(pOwner));
 	pGrenade->m_takedamage = DAMAGE_EVENTS_ONLY;
-	pGrenade->SetCombineSpawned( combineSpawned );
+	pGrenade->SetCombineSpawned(combineSpawned);
+
+	if (combineSpawned)
+	{
+		if (random->RandomFloat() < sk_smokegrenade_chance.GetFloat())
+		{
+			pGrenade->KeyValue("GrenadeType", "2");
+		}
+		else if (random->RandomFloat() < sk_flashgrenade_chance.GetFloat())
+		{
+			pGrenade->KeyValue("GrenadeType", "1");
+		}
+	}
+
+	DispatchSpawn(pGrenade);
 
 	return pGrenade;
 }
