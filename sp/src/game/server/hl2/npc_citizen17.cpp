@@ -68,6 +68,8 @@ ConVar	sk_citizen_player_stare_time	( "sk_citizen_player_stare_time",		"1.0" );
 ConVar  sk_citizen_player_stare_dist	( "sk_citizen_player_stare_dist",		"72" );
 ConVar	sk_citizen_stare_heal_time		( "sk_citizen_stare_heal_time",			"5" );
 
+ConVar	sk_security_health("sk_security_health", "40");
+
 ConVar	g_ai_citizen_show_enemy( "g_ai_citizen_show_enemy", "0" );
 
 ConVar	npc_citizen_insignia( "npc_citizen_insignia", "0" );
@@ -368,6 +370,9 @@ BEGIN_DATADESC( CNPC_Citizen )
 #ifdef MAPBASE
 	DEFINE_INPUT(		m_bTossesMedkits,			FIELD_BOOLEAN, "SetTossMedkits" ),
 	DEFINE_KEYFIELD(	m_bAlternateAiming,			FIELD_BOOLEAN, "AlternateAiming" ),
+
+	DEFINE_KEYFIELD(	m_bIsAlly, FIELD_BOOLEAN, "IsAlly"),
+	DEFINE_KEYFIELD(	m_bIsHostile, FIELD_BOOLEAN, "hostile"),
 #endif
 
 	DEFINE_OUTPUT(		m_OnJoinedPlayerSquad,	"OnJoinedPlayerSquad" ),
@@ -538,62 +543,67 @@ void CNPC_Citizen::Spawn()
 
 #ifdef _XBOX
 	// Always fade the corpse
-	AddSpawnFlags( SF_NPC_FADE_CORPSE );
+	AddSpawnFlags(SF_NPC_FADE_CORPSE);
 #endif // _XBOX
 
-	if ( ShouldAutosquad() )
+	if (ShouldAutosquad())
 	{
-		if ( m_SquadName == GetPlayerSquadName() )
+		if (m_SquadName == GetPlayerSquadName())
 		{
-			CAI_Squad *pPlayerSquad = g_AI_SquadManager.FindSquad( GetPlayerSquadName() );
-			if ( pPlayerSquad && pPlayerSquad->NumMembers() >= MAX_PLAYER_SQUAD )
+			CAI_Squad* pPlayerSquad = g_AI_SquadManager.FindSquad(GetPlayerSquadName());
+			if (pPlayerSquad && pPlayerSquad->NumMembers() >= MAX_PLAYER_SQUAD)
 				m_SquadName = NULL_STRING;
 		}
 		gm_PlayerSquadEvaluateTimer.Force();
 	}
 
-	if ( IsAmmoResupplier() )
+	if (IsAmmoResupplier())
 		m_nSkin = 2;
-	
+
 	m_bRPGAvoidPlayer = false;
 
 	m_bShouldPatrol = false;
 	m_iHealth = sk_citizen_health.GetFloat();
-	
+
+	if (m_Type == CT_SECURITY)
+	{
+		m_iHealth = sk_security_health.GetFloat();
+	}
+
 #ifdef MAPBASE
 	// Now only gets citizen_trains.
-	if ( GetMoveParent() && FClassnameIs( GetMoveParent(), "func_tracktrain" ) )
+	if (GetMoveParent() && FClassnameIs(GetMoveParent(), "func_tracktrain"))
 	{
-		if ( NameMatches("citizen_train_2") )
+		if (NameMatches("citizen_train_2"))
 		{
-			CapabilitiesRemove( bits_CAP_MOVE_GROUND );
-			SetMoveType( MOVETYPE_NONE );
-			SetSequenceByName( "d1_t01_TrainRide_Sit_Idle" );
-			SetIdealActivity( ACT_DO_NOT_DISTURB );
+			CapabilitiesRemove(bits_CAP_MOVE_GROUND);
+			SetMoveType(MOVETYPE_NONE);
+			SetSequenceByName("d1_t01_TrainRide_Sit_Idle");
+			SetIdealActivity(ACT_DO_NOT_DISTURB);
 		}
-		else if ( NameMatches("citizen_train_1") )
+		else if (NameMatches("citizen_train_1"))
 		{
-			CapabilitiesRemove( bits_CAP_MOVE_GROUND );
-			SetMoveType( MOVETYPE_NONE );
-			SetSequenceByName( "d1_t01_TrainRide_Stand" );
-			SetIdealActivity( ACT_DO_NOT_DISTURB );
+			CapabilitiesRemove(bits_CAP_MOVE_GROUND);
+			SetMoveType(MOVETYPE_NONE);
+			SetSequenceByName("d1_t01_TrainRide_Stand");
+			SetIdealActivity(ACT_DO_NOT_DISTURB);
 		}
 	}
 #else
 	// Are we on a train? Used in trainstation to have NPCs on trains.
-	if ( GetMoveParent() && FClassnameIs( GetMoveParent(), "func_tracktrain" ) )
+	if (GetMoveParent() && FClassnameIs(GetMoveParent(), "func_tracktrain"))
 	{
-		CapabilitiesRemove( bits_CAP_MOVE_GROUND );
-		SetMoveType( MOVETYPE_NONE );
-		if ( NameMatches("citizen_train_2") )
+		CapabilitiesRemove(bits_CAP_MOVE_GROUND);
+		SetMoveType(MOVETYPE_NONE);
+		if (NameMatches("citizen_train_2"))
 		{
-			SetSequenceByName( "d1_t01_TrainRide_Sit_Idle" );
-			SetIdealActivity( ACT_DO_NOT_DISTURB );
+			SetSequenceByName("d1_t01_TrainRide_Sit_Idle");
+			SetIdealActivity(ACT_DO_NOT_DISTURB);
 		}
 		else
 		{
-			SetSequenceByName( "d1_t01_TrainRide_Stand" );
-			SetIdealActivity( ACT_DO_NOT_DISTURB );
+			SetSequenceByName("d1_t01_TrainRide_Stand");
+			SetIdealActivity(ACT_DO_NOT_DISTURB);
 		}
 	}
 #endif
@@ -608,16 +618,54 @@ void CNPC_Citizen::Spawn()
 
 	m_flNextHealthSearchTime = gpGlobals->curtime;
 
-	CWeaponRPG *pRPG = dynamic_cast<CWeaponRPG*>(GetActiveWeapon());
-	if ( pRPG )
+	CWeaponRPG* pRPG = dynamic_cast<CWeaponRPG*>(GetActiveWeapon());
+	if (pRPG)
 	{
-		CapabilitiesRemove( bits_CAP_USE_SHOT_REGULATOR );
+		CapabilitiesRemove(bits_CAP_USE_SHOT_REGULATOR);
 		pRPG->StopGuiding();
 	}
 
 	m_flTimePlayerStare = FLT_MAX;
 
 	AddEFlags(EFL_NO_DISSOLVE | EFL_NO_MEGAPHYSCANNON_RAGDOLL | EFL_NO_PHYSCANNON_INTERACTION);
+
+	if (m_Type == CT_SECURITY)
+	{
+		m_bDontPickupWeapons = true;
+		if (m_spawnEquipment == NULL_STRING)
+		{
+			m_spawnEquipment = MAKE_STRING("weapon_pistol");
+		}
+	}
+	else
+	{
+		// Check if civilian, and remove their weapon
+		// Use citizentype 4 if you need to use a specific civilian model as enemy or ally
+		bool isCivilian = false;
+		switch (m_Type)
+		{
+		case CT_DOWNTRODDEN:
+			isCivilian = true;
+			break;
+		case CT_REFUGEE:
+			isCivilian = true;
+			break;
+		case CT_EMPLOYEE:
+			isCivilian = true;
+			break;
+		default:
+			break;
+		}
+
+		if (isCivilian)
+		{
+			m_bDontPickupWeapons = true;
+			if (m_spawnEquipment != NULL_STRING)
+			{
+				m_spawnEquipment = NULL_STRING;
+			}
+		}
+	}
 
 	NPCInit();
 
@@ -999,14 +1047,15 @@ string_t CNPC_Citizen::GetModelName() const
 //-----------------------------------------------------------------------------
 Class_T	CNPC_Citizen::Classify()
 {
-	if (m_Type == CT_REBEL)
-		return CLASS_PLAYER_ALLY;
+	if (m_bIsAlly)
+		return CLASS_PLAYER_ALLY_VITAL;
+
+	if (m_Type == CT_REBEL || m_bIsHostile)
+		return CLASS_CITIZEN_REBEL;
 	if (m_Type == CT_SECURITY)
 		return CLASS_METROPOLICE;
-	if (m_Type == CT_EMPLOYEE || m_Type == CT_DOWNTRODDEN)
-		return CLASS_CITIZEN_PASSIVE;
 
-	return CLASS_PLAYER_ALLY;
+	return CLASS_CITIZEN_PASSIVE;
 }
 
 //-----------------------------------------------------------------------------
