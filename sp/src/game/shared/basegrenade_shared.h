@@ -28,14 +28,6 @@
 
 #define BASEGRENADE_EXPLOSION_VOLUME	1024
 
-enum GrenadeType
-{
-	GRENADE_TYPE_FRAG = 0,
-
-	GRENADE_TYPE_FLASHBANG,
-	GRENADE_TYPE_SMOKEGRENADE
-};
-
 class CTakeDamageInfo;
 
 #if !defined( CLIENT_DLL )
@@ -81,11 +73,8 @@ public:
 	virtual int			BloodColor( void ) { return DONT_BLEED; }
 	virtual void		Event_Killed( const CTakeDamageInfo &info );
 
-	virtual float		GetShakeAmplitude( void ) { return 25.0; }
-	virtual float		GetShakeRadius( void ) { return 750.0; }
-
-	bool	IsFlashbang() { return m_iGrenadeType == GRENADE_TYPE_FLASHBANG; }
-	bool	IsSmokegren() { return m_iGrenadeType == GRENADE_TYPE_SMOKEGRENADE; }
+	virtual float		GetShakeAmplitude(void) { return 25.0; }
+	virtual float		GetShakeRadius(void) { return 750.0; }
 
 	// Damage accessors.
 	virtual float GetDamage()
@@ -168,8 +157,6 @@ protected:
 private:
 	CNetworkHandle( CBaseEntity, m_hThrower );					// Who threw this grenade
 	EHANDLE			m_hOriginalThrower;							// Who was the original thrower of this grenade
-
-	CNetworkVar(int, m_iGrenadeType);
 
 	CBaseGrenade( const CBaseGrenade & ); // not defined, not accessible
 
