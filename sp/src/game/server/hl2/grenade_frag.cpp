@@ -36,7 +36,6 @@ ConVar sk_fraggrenade_radius	( "sk_fraggrenade_radius", "0");
 // Flash grenades
 ConVar sk_flashgrenade_modeloverride("sk_flashgrenade_modeloverride", "-1");
 ConVar sk_flashgrenade_blind_time("sk_flashgrenade_blind_time", "15.0");
-ConVar sk_flashgrenade_chance("sk_flashgrenade_chance", "0.25");
 
 // Smoke grenades
 ConVar sk_smokegrenade_chance("sk_smokegrenade_chance", "0.25");
@@ -152,7 +151,7 @@ void CGrenadeFrag::Spawn( void )
 		{
 			m_bIsSmokeGrenade = true;
 		}
-		else if (random->RandomFloat() < sk_flashgrenade_chance.GetFloat())
+		else
 		{
 			m_bIsFlashGrenade = true;
 		}
@@ -737,8 +736,6 @@ CBaseGrenade *Fraggrenade_Create( const Vector &position, const QAngle &angles, 
 	pGrenade->SetThrower(ToBaseCombatCharacter(pOwner));
 	pGrenade->m_takedamage = DAMAGE_EVENTS_ONLY;
 	pGrenade->SetCombineSpawned(combineSpawned);
-
-	DispatchSpawn(pGrenade);
 
 	return pGrenade;
 }
