@@ -82,6 +82,14 @@ public:
 	void	SetPunted( bool punt ) { m_punted = punt; }
 	bool	WasPunted( void ) const { return m_punted; }
 
+	float	GetShakeAmplitude(void);
+	float	GetShakeRadius(void);
+
+	bool	IsFlashbang() { return m_bIsSmokeGrenade; }
+	bool	IsSmokegren() { return m_bIsFlashGrenade; }
+
+	void	Use(CBaseEntity* pActivator, CBaseEntity* pCaller, USE_TYPE useType, float value);
+
 	void	Explode(trace_t* pTrace, int bitsDamageType);
 	void	ExplodeSmokeGrenade(trace_t* pTrace, int bitsDamageType);
 	void	ExplodeFlashGrenade(trace_t* pTrace, int bitsDamageType);
@@ -102,6 +110,9 @@ protected:
 	bool	m_combineSpawned;
 	bool	m_punted;
 
+	bool	m_bIsSmokeGrenade;
+	bool	m_bIsFlashGrenade;
+
 	CBaseEntity* pSmokeCloud;
 };
 
@@ -116,8 +127,6 @@ BEGIN_DATADESC( CGrenadeFrag )
 	DEFINE_FIELD( m_inSolid, FIELD_BOOLEAN ),
 	DEFINE_FIELD( m_combineSpawned, FIELD_BOOLEAN ),
 	DEFINE_FIELD( m_punted, FIELD_BOOLEAN ),
-
-	DEFINE_KEYFIELD(m_iGrenadeType, FIELD_INTEGER, "GrenadeType"),
 	
 	// Function Pointers
 	DEFINE_THINKFUNC( DelayThink ),
@@ -137,6 +146,17 @@ CGrenadeFrag::~CGrenadeFrag( void )
 
 void CGrenadeFrag::Spawn( void )
 {
+	if (GetOwnerEntity() && GetOwnerEntity()->IsNPC() && GetOwnerEntity()->Classify() == CLASS_COMBINE && FStrEq(GetOwnerEntity()->GetClassname(), "npc_combine_s"))
+	{
+		if (random->RandomFloat() < sk_smokegrenade_chance.GetFloat())
+		{
+			m_bIsSmokeGrenade = true;
+		}
+		else if (random->RandomFloat() < sk_flashgrenade_chance.GetFloat())
+		{
+			m_bIsFlashGrenade = true;
+		}
+	}
 	Precache();
 	if (IsSmokegren() && !FStrEq(sk_smokegrenade_modeloverride.GetString(), "-1"))
 	{
@@ -508,6 +528,34 @@ void CGrenadeFrag::InputSetTimer( inputdata_t &inputdata )
 	SetTimer( inputdata.value.Float(), inputdata.value.Float() - FRAG_GRENADE_WARN_TIME );
 }
 
+float CGrenadeFrag::GetShakeAmplitude(void)
+{
+	if (IsSmokegren() || IsFlashbang())
+		return 0.0;
+	return 25.0;
+}
+
+float CGrenadeFrag::GetShakeRadius(void)
+{
+	if (IsSmokegren() || IsFlashbang())
+		return 0.0;
+	return 750.0;
+}
+
+void CGrenadeFrag::Use(CBaseEntity* pActivator, CBaseEntity* pCaller, USE_TYPE useType, float value)
+{
+	if (IsSmokegren() || IsFlashbang())
+	{
+		if ( useType == USE_TOGGLE && pActivator->IsPlayer() )
+		{
+			return; // dont pick the grenade up
+		}
+	}
+
+	// Pass up so we still call any custom Use function
+	BaseClass::Use(pActivator, pCaller, useType, value);
+}
+
 void CGrenadeFrag::Explode(trace_t* pTrace, int bitsDamageType)
 {
 	if (IsSmokegren())
@@ -601,7 +649,7 @@ void CGrenadeFrag::ExplodeFlashGrenade(trace_t* pTrace, int bitsDamageType)
 
 	AddEffects(EF_NODRAW);
 	SetAbsVelocity(vec3_origin);
-	SetNextThink(gpGlobals->curtime);
+	SetNextThink(gpGlobals->curtime + 0.1f);
 
 #endif
 }
@@ -651,7 +699,14 @@ void CGrenadeFrag::ExplodeSmokeGrenade(trace_t* pTrace, int bitsDamageType)
 	{
 		pFakeGrenade->SetAbsOrigin(GetAbsOrigin() + Vector(0,0,2));
 		pFakeGrenade->SetAbsAngles(GetAbsAngles());
-		pFakeGrenade->SetModelName(GetModelName());
+		if (!FStrEq(sk_smokegrenade_modeloverride.GetString(), "-1"))
+		{
+			pFakeGrenade->SetModel(sk_smokegrenade_modeloverride.GetString());
+		}
+		else
+		{
+			pFakeGrenade->SetModel(GRENADE_MODEL);
+		}
 		pFakeGrenade->SetCollisionGroup(COLLISION_GROUP_DEBRIS);
 
 		DispatchSpawn(pFakeGrenade);
@@ -675,29 +730,13 @@ void CGrenadeFrag::ExplodeSmokeGrenade(trace_t* pTrace, int bitsDamageType)
 CBaseGrenade *Fraggrenade_Create( const Vector &position, const QAngle &angles, const Vector &velocity, const AngularImpulse &angVelocity, CBaseEntity *pOwner, float timer, bool combineSpawned )
 {
 	// Don't set the owner here, or the player can't interact with grenades he's thrown
-	//CGrenadeFrag* pGrenade = (CGrenadeFrag*)CBaseEntity::Create("npc_grenade_frag", position, angles, pOwner);
-	CGrenadeFrag* pGrenade = (CGrenadeFrag*)CreateEntityByName("npc_grenade_frag");
-	pGrenade->SetAbsOrigin(position);
-	pGrenade->SetAbsAngles(angles);
-	pGrenade->SetOwnerEntity(pOwner);
+	CGrenadeFrag* pGrenade = (CGrenadeFrag*)CBaseEntity::Create("npc_grenade_frag", position, angles, pOwner);
 
 	pGrenade->SetTimer(timer, timer - FRAG_GRENADE_WARN_TIME);
 	pGrenade->SetVelocity(velocity, angVelocity);
 	pGrenade->SetThrower(ToBaseCombatCharacter(pOwner));
 	pGrenade->m_takedamage = DAMAGE_EVENTS_ONLY;
 	pGrenade->SetCombineSpawned(combineSpawned);
-
-	if (combineSpawned)
-	{
-		if (random->RandomFloat() < sk_smokegrenade_chance.GetFloat())
-		{
-			pGrenade->KeyValue("GrenadeType", "2");
-		}
-		else if (random->RandomFloat() < sk_flashgrenade_chance.GetFloat())
-		{
-			pGrenade->KeyValue("GrenadeType", "1");
-		}
-	}
 
 	DispatchSpawn(pGrenade);
 
