@@ -108,13 +108,23 @@ void CHudObjective::Paint()
 	surface()->DrawFilledRect(x, y, x + w, y + h);
 
 	const char* pszText = STRING(g_syncedObjective);
-	wchar_t wszText[128];
-	g_pVGuiLocalize->ConvertANSIToUnicode(pszText, wszText, ARRAYSIZE(wszText));
+//	wchar_t wszText[128];
+	wchar_t* wasLocalized = NULL;
+	char szToken[256];
+	Q_snprintf(szToken, sizeof(szToken), "#%s", pszText);
+	wasLocalized = g_pVGuiLocalize->Find(szToken);
+
+	if (!wasLocalized)
+	{
+		static wchar_t wszFallback[256];
+		g_pVGuiLocalize->ConvertANSIToUnicode(pszText, wszFallback, ARRAYSIZE(wszFallback));
+		wasLocalized = wszFallback;
+	}
 
 	surface()->DrawSetTextFont(m_Font);
 	surface()->DrawSetTextColor(GetFgColor());
 	surface()->DrawSetTextPos(x, y);
-	surface()->DrawPrintText(wszText, wcslen(wszText));
+	surface()->DrawPrintText(wasLocalized, wcslen(wasLocalized));
 }
 
 class ObjectiveListener : public IGameEventListener2

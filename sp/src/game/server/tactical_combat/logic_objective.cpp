@@ -1,5 +1,7 @@
 #include "cbase.h"
 #include "eventqueue.h"
+#include "vscript/ivscript.h"
+#include "vscript_server.h"
 
 class CLogicObjectiveManager : public CLogicalEntity
 {
@@ -7,12 +9,14 @@ class CLogicObjectiveManager : public CLogicalEntity
 public:
 	void Spawn();
 	void OnObjectiveUpdated();
+
+	const char* ScriptGetObjective();
 private:
 	// Inputs
-	void InputNewObjective(inputdata_t& inputdata);
+	void InputChangeObjective(inputdata_t& inputdata);
 
 	// Outputs
-	COutputString m_OnNewObjective;
+	COutputEvent m_OnObjectiveCompleted;
 
 	// KVs
 	string_t m_sObjective;
@@ -26,23 +30,17 @@ BEGIN_DATADESC(CLogicObjectiveManager)
 
 DEFINE_KEYFIELD(m_sObjective, FIELD_STRING, "objective"),
 
-// Inputs
-DEFINE_INPUTFUNC(FIELD_STRING, "NewObjective", InputNewObjective),
-
-DEFINE_OUTPUT(m_OnNewObjective, "OnNewObjective"),
+DEFINE_OUTPUT(m_OnObjectiveCompleted, "OnObjectiveCompleted"),
 
 END_DATADESC()
+
+BEGIN_SCRIPTDESC_ROOT(CLogicObjectiveManager, "Objective manager entity")
+DEFINE_SCRIPTFUNC(ScriptGetObjective, "Returns the current objective")
+END_SCRIPTDESC()
 
 void CLogicObjectiveManager::Spawn()
 {
 	BaseClass::Spawn();
-
-	if (gEntList.FindEntityByClassname(NULL, "logic_objectivemanager") != NULL)
-	{
-		Warning("[logic_objectivemanager] Only one instance is allowed!\n");
-		UTIL_Remove(this);
-		return;
-	}
 
 	if (m_sObjective != NULL_STRING)
 	{
@@ -55,9 +53,12 @@ void CLogicObjectiveManager::Spawn()
 //-----------------------------------------------------------------------------
 void CLogicObjectiveManager::OnObjectiveUpdated()
 {
-	variant_t var;
-	var.SetString(m_sObjective);
-	m_OnNewObjective.FireOutput(var, this, this);
+	// Complete the objective if there was one active
+	if (m_sObjective != NULL_STRING)
+	{
+		m_sObjective = NULL_STRING;
+		m_OnObjectiveCompleted.FireOutput(this, this);
+	}
 
 	IGameEvent* pEvent = gameeventmanager->CreateEvent("sync_objective");
 	if (pEvent)
@@ -67,8 +68,27 @@ void CLogicObjectiveManager::OnObjectiveUpdated()
 	}
 }
 
-void CLogicObjectiveManager::InputNewObjective(inputdata_t& inputdata)
+//-----------------------------------------------------------------------------
+// Purpose: Returns the current objective in VScript
+//-----------------------------------------------------------------------------
+const char* CLogicObjectiveManager::ScriptGetObjective()
 {
+	return STRING(m_sObjective);
+}
+
+//-----------------------------------------------------------------------------
+// Purpose: Change the current objective
+//-----------------------------------------------------------------------------
+void CLogicObjectiveManager::InputChangeObjective(inputdata_t& inputdata)
+{
+	// Complete the objective if there was one active
+	if (m_sObjective != NULL_STRING)
+	{
+		m_sObjective = NULL_STRING;
+		m_OnObjectiveCompleted.FireOutput(this, this);
+	}
+
 	m_sObjective = inputdata.value.StringID();
 	OnObjectiveUpdated();
 }
+
