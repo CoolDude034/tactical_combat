@@ -364,7 +364,7 @@ void CHUDDetectionInfo::Paint()
 			ammoColor[3] = 255 * scalar;
 		}
 		
-		gHUD.DrawIconProgressBar( xCenter + (m_icon_rb->Width() * 2), yCenter, m_icon_rb, m_icon_rbe, (1.0f - ammoPerc), ammoColor, CHud::HUDPB_VERTICAL);
+		gHUD.DrawIconProgressBar( xCenter + m_icon_rb->Width(), yCenter, m_icon_rb, m_icon_rbe, (1.0f - ammoPerc), ammoColor, CHud::HUDPB_VERTICAL);
 	}
 }
 
