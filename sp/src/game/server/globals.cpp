@@ -25,3 +25,5 @@
 Vector			g_vecAttackDir;
 int				g_iSkillLevel;
 bool			g_fGameOver;
+
+ConVar sk_stealth_detection("sk_stealth_detection", "400", FCVAR_CHEAT);

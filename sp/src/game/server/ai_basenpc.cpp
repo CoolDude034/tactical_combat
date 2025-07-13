@@ -117,6 +117,9 @@ extern ConVar sk_healthkit;
 #include "utlbuffer.h"
 #include "gamestats.h"
 
+// used to check if we're in stealth or not
+#include "globalstate.h"
+
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"
 
@@ -9277,7 +9280,7 @@ CBaseEntity *CAI_BaseNPC::BestEnemy( void )
 			continue;
 		}
 
-		if ( m_bIgnoreUnseenEnemies )
+		if ( m_bIgnoreUnseenEnemies || GlobalEntity_GetState("stealth_mode") == GLOBAL_ON )
 		{
 			const float TIME_CONSIDER_ENEMY_UNSEEN = .4;
 			if ( pEMemory->timeLastSeen < gpGlobals->curtime - TIME_CONSIDER_ENEMY_UNSEEN )

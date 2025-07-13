@@ -13,6 +13,7 @@
 #include "simtimer.h"
 #include "ai_component.h"
 #include "soundent.h"
+#include "globalstate.h"
 
 #if defined( _WIN32 )
 #pragma once
@@ -40,6 +41,8 @@ enum seentype_t
 #define SENSING_FLAGS_DONT_LOOK		0x00000001 // Effectively makes the NPC blind
 #define SENSING_FLAGS_DONT_LISTEN	0x00000002 // Effectively makes the NPC deaf
 
+extern ConVar sk_stealth_detection;
+
 //-----------------------------------------------------------------------------
 // class CAI_ScriptConditions
 //
@@ -64,7 +67,12 @@ public:
 		m_iSensingFlags = SENSING_FLAGS_NONE;
 	}
 	
-	float			GetDistLook() const				{ return m_LookDist; }
+	float			GetDistLook() const
+	{
+		if (GlobalEntity_GetState("stealth_mode") == GLOBAL_ON)
+			return sk_stealth_detection.GetFloat();
+		return m_LookDist;
+	}
 	void			SetDistLook( float flDistLook ) { m_LookDist = flDistLook; }
 
 	void			PerformSensing();
