@@ -13,6 +13,7 @@
 #include "team.h"
 #include "ai_basenpc.h"
 #include "saverestore_utlvector.h"
+#include "globalstate.h"
 
 #ifdef PORTAL
 	#include "portal_util_shared.h"
@@ -32,7 +33,7 @@
 
 const float AI_STANDARD_NPC_SEARCH_TIME = .25;
 const float AI_EFFICIENT_NPC_SEARCH_TIME = .35;
-const float AI_HIGH_PRIORITY_SEARCH_TIME = 0.15;
+const float AI_HIGH_PRIORITY_SEARCH_TIME = 0.2; // 0.15 is bit slow, so use 0.2
 const float AI_MISC_SEARCH_TIME  = 0.45;
 
 //-----------------------------------------------------------------------------
@@ -438,13 +439,17 @@ int CAI_Senses::LookForHighPriorityEntities( int iDistance )
 		// Players
 		for ( int i = 1; i <= gpGlobals->maxClients; i++ )
 		{
-			CBaseEntity *pPlayer = UTIL_PlayerByIndex( i );
+			CBasePlayer *pPlayer = ToBasePlayer(UTIL_PlayerByIndex(i));
 
 			if ( pPlayer )
 			{
 				if ( origin.DistToSqr(pPlayer->GetAbsOrigin()) < distSq && Look( pPlayer ) )
 				{
-					nSeen++;
+					if ( pPlayer->m_iDetection < 100.0f )
+						pPlayer->m_iDetection++;
+					else if ( pPlayer->m_iDetection >= 100.0f )
+						nSeen++;
+					pPlayer->m_flLastSeenTime = gpGlobals->curtime;
 				}
 #ifdef PORTAL
 				else
@@ -690,8 +695,17 @@ void CAI_Senses::PerformSensing( void )
 	// -----------------
 	//  Look	
 	// -----------------
-	if( !HasSensingFlags(SENSING_FLAGS_DONT_LOOK) )
-		Look( m_LookDist );
+	if ( !HasSensingFlags(SENSING_FLAGS_DONT_LOOK) )
+	{
+		if (GlobalEntity_GetState("stealth_mode") == GLOBAL_ON)
+		{
+			Look(400);
+		}
+		else
+		{
+			Look(m_LookDist);
+		}
+	}
 	
 	// ------------------
 	//  Listen

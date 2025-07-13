@@ -348,6 +348,8 @@ END_RECV_TABLE()
 		RecvPropEHandle( RECVINFO( m_hColorCorrectionCtrl ) ),	// Send to everybody - for spectating
 #endif
 
+		RecvPropInt(RECVINFO(m_iDetection)),
+
 #if defined USES_ECON_ITEMS
 		RecvPropUtlVector( RECVINFO_UTLVECTOR( m_hMyWearables ), MAX_WEARABLES_SENT_FROM_SERVER,	RecvPropEHandle(NULL, 0, 0) ),
 #endif

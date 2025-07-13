@@ -935,6 +935,12 @@ public:
 	IMPLEMENT_NETWORK_VAR_FOR_DERIVED( m_nNextThinkTick );
 	IMPLEMENT_NETWORK_VAR_FOR_DERIVED( m_vecVelocity );
 	IMPLEMENT_NETWORK_VAR_FOR_DERIVED( m_nWaterLevel );
+
+	CNetworkVar(int, m_iDetection); // player's current detection
+
+#ifndef CLIENT_DLL
+	float				m_flLastSeenTime; // (Server only) Last seen time to calculate detection
+#endif
 	
 	int						m_nButtons;
 	int						m_afButtonPressed;

@@ -4890,6 +4890,22 @@ void CBasePlayer::PostThink()
 	SimulatePlayerSimulatedEntities();
 #endif
 
+	// Calculate detection
+	if (m_iDetection > 0)
+	{
+		const float decayDelay = 0.75f; // seconds after last seen
+		const float decayRate = 1.5f; // 0.66666666666
+
+		if (gpGlobals->curtime - m_flLastSeenTime > decayDelay)
+		{
+			static float flLastDecayTime = 0.0f;
+			if (gpGlobals->curtime > flLastDecayTime)
+			{
+				m_iDetection--;
+				flLastDecayTime = gpGlobals->curtime + (1.0f / decayRate);
+			}
+		}
+	}
 }
 
 // handles touching physics objects
@@ -8918,6 +8934,9 @@ void SendProxy_ShiftPlayerSpawnflags( const SendProp *pProp, const void *pStruct
 		SendPropEHandle		( SENDINFO(m_hPostProcessCtrl) ),
 		SendPropEHandle		( SENDINFO(m_hColorCorrectionCtrl) ),
 #endif
+
+		// Send the detection value to the client
+		SendPropInt(SENDINFO(m_iDetection), 8, SPROP_UNSIGNED),
 
 #if defined USES_ECON_ITEMS
 		SendPropUtlVector( SENDINFO_UTLVECTOR( m_hMyWearables ), MAX_WEARABLES_SENT_FROM_SERVER, SendPropEHandle( NULL, 0 ) ),

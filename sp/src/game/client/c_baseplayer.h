@@ -486,6 +486,8 @@ public:
 	bool			m_bInTriggerFall;
 #endif
 
+	CNetworkVar(int, m_iDetection); // player's current detection
+
 protected:
 
 	//Tony; made all of these virtual so mods can override.
