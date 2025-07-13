@@ -33,15 +33,6 @@ DEFINE_OUTPUT(m_OnNewObjective, "OnNewObjective"),
 
 END_DATADESC()
 
-//-----------------------------------------------------------------------------
-// Purpose: 
-//-----------------------------------------------------------------------------
-void CLogicObjectiveManager::InputNewObjective(inputdata_t& inputdata)
-{
-	m_sObjective = MAKE_STRING(inputdata.value.String());
-	OnObjectiveUpdated();
-}
-
 void CLogicObjectiveManager::Spawn()
 {
 	BaseClass::Spawn();
@@ -59,9 +50,25 @@ void CLogicObjectiveManager::Spawn()
 	}
 }
 
+//-----------------------------------------------------------------------------
+// Purpose: Updates any objective
+//-----------------------------------------------------------------------------
 void CLogicObjectiveManager::OnObjectiveUpdated()
 {
 	variant_t var;
 	var.SetString(m_sObjective);
 	m_OnNewObjective.FireOutput(var, this, this);
+
+	IGameEvent* pEvent = gameeventmanager->CreateEvent("sync_objective");
+	if (pEvent)
+	{
+		pEvent->SetString("objective", m_sObjective.ToCStr());
+		gameeventmanager->FireEvent(pEvent);
+	}
+}
+
+void CLogicObjectiveManager::InputNewObjective(inputdata_t& inputdata)
+{
+	m_sObjective = inputdata.value.StringID();
+	OnObjectiveUpdated();
 }
