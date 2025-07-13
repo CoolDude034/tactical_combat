@@ -30,6 +30,10 @@ BEGIN_DATADESC(CLogicObjectiveManager)
 
 DEFINE_KEYFIELD(m_sObjective, FIELD_STRING, "objective"),
 
+// Inputs
+DEFINE_INPUTFUNC(FIELD_STRING, "ChangeObjective", InputChangeObjective),
+
+// Outputs
 DEFINE_OUTPUT(m_OnObjectiveCompleted, "OnObjectiveCompleted"),
 
 END_DATADESC()
