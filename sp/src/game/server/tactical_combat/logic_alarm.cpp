@@ -2,12 +2,9 @@
 #include "eventqueue.h"
 #include "vscript/ivscript.h"
 #include "vscript_server.h"
-#include "globalstate.h"
 
 bool g_isAlarmTriggered;
 bool g_InstanceCreated;
-
-string_t g_stealthGlobal = AllocPooledString("stealth_mode");
 
 class CLogicAlarmManager : public CLogicalEntity
 {
@@ -33,6 +30,9 @@ LINK_ENTITY_TO_CLASS(logic_alarm, CLogicAlarmManager);
 
 BEGIN_DATADESC(CLogicAlarmManager)
 
+// Inputs
+DEFINE_INPUTFUNC(FIELD_VOID, "TriggerAlarm", InputTriggerAlarm),
+
 // Outputs
 DEFINE_OUTPUT(m_OnAlarmTriggered, "OnAlarmTriggered"),
 
@@ -52,11 +52,6 @@ void CLogicAlarmManager::Spawn()
 		Warning("logic_alarm only allows one instance per-session!\n");
 		UTIL_Remove(this);
 		return;
-	}
-
-	if (!GlobalEntity_IsInTable("stealth_mode"))
-	{
-		GlobalEntity_Add(g_stealthGlobal, gpGlobals->mapname, GLOBAL_OFF);
 	}
 
 	g_InstanceCreated = true;
@@ -79,20 +74,23 @@ CLogicAlarmManager::~CLogicAlarmManager()
 	g_InstanceCreated = false;
 }
 
+void CLogicAlarmManager::InputTriggerAlarm(inputdata_t& inputdata)
+{
+	AlarmTriggered();
+}
+
 //-----------------------------------------------------------------------------
 // Purpose: Returns if the police are called for VScript
 //-----------------------------------------------------------------------------
 bool CLogicAlarmManager::ScriptIsPoliceCalled()
 {
-	return false;
+	return g_isAlarmTriggered;
 }
 
 void CLogicAlarmManager::AlarmTriggered()
 {
 	if (g_isAlarmTriggered) return;
 	g_isAlarmTriggered = true;
-	if (GlobalEntity_GetState("stealth_mode") == GLOBAL_ON)
-	{
-		GlobalEntity_SetState(g_stealthGlobal, GLOBAL_OFF);
-	}
+
+	m_OnAlarmTriggered.FireOutput(this, this);
 }
