@@ -31,6 +31,8 @@ public:
 	virtual void	OnThink(void);
 	bool			ShouldDraw(void);
 
+	void			ApplySchemeSettings(vgui::IScheme* pScheme);
+
 protected:
 	virtual void	Paint();
 
@@ -56,8 +58,6 @@ CHudObjective::CHudObjective(const char* pElementName) : CHudElement(pElementNam
 //-----------------------------------------------------------------------------
 void CHudObjective::Init(void)
 {
-	m_Font = surface()->CreateFont();
-	surface()->AddBitmapFontFile("sourcetest");
 }
 
 //-----------------------------------------------------------------------------
@@ -80,6 +80,15 @@ bool CHudObjective::ShouldDraw()
 }
 
 //-----------------------------------------------------------------------------
+// Purpose: Apply settings from .res file
+//-----------------------------------------------------------------------------
+void CHudObjective::ApplySchemeSettings(vgui::IScheme* pScheme)
+{
+	BaseClass::ApplySchemeSettings(pScheme);
+	m_Font = pScheme->GetFont("ObjectiveFont", true);
+}
+
+//-----------------------------------------------------------------------------
 // Purpose: 
 //-----------------------------------------------------------------------------
 void CHudObjective::OnThink(void)
@@ -91,22 +100,20 @@ void CHudObjective::OnThink(void)
 //-----------------------------------------------------------------------------
 void CHudObjective::Paint()
 {
-	int x = 10;
-	int y = 10;
-	int w = 300;
-	int h = 80;
+	int x,y,w,h;
+	GetPos(x, y);
+	GetSize(w, h);
 
-	surface()->DrawSetColor(Color(111, 120, 133, 255));
+	surface()->DrawSetColor(GetBgColor());
 	surface()->DrawFilledRect(x, y, x + w, y + h);
 
 	const char* pszText = STRING(g_syncedObjective);
 	wchar_t wszText[128];
-	g_pVGuiLocalize->ConvertANSIToUnicode(pszText, wszText, sizeof(wszText));
+	g_pVGuiLocalize->ConvertANSIToUnicode(pszText, wszText, ARRAYSIZE(wszText));
 
 	surface()->DrawSetTextFont(m_Font);
-	surface()->DrawSetTextColor(Color(255, 255, 255, 255));
+	surface()->DrawSetTextColor(GetFgColor());
 	surface()->DrawSetTextPos(x, y);
-	surface()->SetFontGlyphSet(m_Font, "Tahoma", 18, 500, 0, 0, 0);
 	surface()->DrawPrintText(wszText, wcslen(wszText));
 }
 
