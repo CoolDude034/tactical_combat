@@ -39,8 +39,8 @@ DEFINE_OUTPUT(m_OnAlarmTriggered, "OnAlarmTriggered"),
 END_DATADESC()
 
 BEGIN_SCRIPTDESC_ROOT(CLogicAlarmManager, "Alarm manager entity")
-DEFINE_SCRIPTFUNC(ScriptIsPoliceCalled, "Returns if the police is called.")
-DEFINE_SCRIPTFUNC(ScriptOnAlarmTriggered, "Hook triggers when the alarm goes off if it wasn't triggered before")
+DEFINE_SCRIPTFUNC_NAMED(ScriptIsPoliceCalled, "IsPoliceCalled", "Returns if the police is called.")
+DEFINE_SCRIPTFUNC_NAMED(ScriptOnAlarmTriggered, "OnAlarmTriggered", "Hook triggers when the alarm goes off if it wasn't triggered before")
 END_SCRIPTDESC()
 
 void CLogicAlarmManager::Spawn()
