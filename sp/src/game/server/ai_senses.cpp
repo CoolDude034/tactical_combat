@@ -430,7 +430,7 @@ bool CAI_Senses::LookThroughPortal( const CProp_Portal *pPortal, CBaseEntity *pS
 int CAI_Senses::LookForHighPriorityEntities( int iDistance )
 {
 	int nSeen = 0;
-	const float searchTime = GlobalEntity_GetState("stealth_mode") ? 0.2f : AI_HIGH_PRIORITY_SEARCH_TIME;
+	const float searchTime = GlobalEntity_GetState("stealth_mode") == GLOBAL_ON ? 0.2f : AI_HIGH_PRIORITY_SEARCH_TIME;
 	if ( gpGlobals->curtime - m_TimeLastLookHighPriority > searchTime )
 	{
 		AI_PROFILE_SENSES(CAI_Senses_LookForHighPriorityEntities);
@@ -450,11 +450,18 @@ int CAI_Senses::LookForHighPriorityEntities( int iDistance )
 			{
 				if ( origin.DistToSqr(pPlayer->GetAbsOrigin()) < distSq && Look( pPlayer ) )
 				{
-					if ( pPlayer->m_iDetection < PLAYER_MAX_DETECTION )
-						pPlayer->m_iDetection++;
-					else if ( pPlayer->m_iDetection >= PLAYER_MAX_DETECTION )
+					if (GlobalEntity_GetState("stealth_mode") == GLOBAL_ON)
+					{
+						if (pPlayer->m_iDetection < PLAYER_MAX_DETECTION)
+							pPlayer->m_iDetection++;
+						else if (pPlayer->m_iDetection >= 99.0f)
+							nSeen++;
+						pPlayer->m_flLastSeenTime = gpGlobals->curtime;
+					}
+					else
+					{
 						nSeen++;
-					pPlayer->m_flLastSeenTime = gpGlobals->curtime;
+					}
 				}
 #ifdef PORTAL
 				else
