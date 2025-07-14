@@ -41,6 +41,8 @@ bool NPC_CheckBrushExclude( CBaseEntity *pEntity, CBaseEntity *pBrush );
 ConVar r_visualizetraces( "r_visualizetraces", "0", FCVAR_CHEAT );
 ConVar developer("developer", "0", 0, "Set developer message level." ); // developer mode
 
+ConVar hide_stealthhud("hide_stealthhud", "0", FCVAR_GAMEDLL | FCVAR_HIDDEN | FCVAR_REPLICATED);
+
 float UTIL_VecToYaw( const Vector &vec )
 {
 	if (vec.y == 0 && vec.x == 0)

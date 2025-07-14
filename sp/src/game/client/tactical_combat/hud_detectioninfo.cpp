@@ -28,9 +28,12 @@ int ScreenTransform( const Vector& point, Vector& screen );
 
 #define	DETECTION_WARNING_THRESHOLD	99
 
+const float PLAYER_MAX_DETECTION = 100.0f; // must keep it synced with the one in hud_detectioninfo.cpp!!!
+
 static ConVar	hud_quickinfo( "hud_quickinfo", "1", FCVAR_ARCHIVE );
 
 extern ConVar crosshair;
+extern ConVar hide_stealthhud;
 
 #define QUICKINFO_EVENT_DURATION	1.0f
 #define	QUICKINFO_BRIGHTNESS_FULL	255
@@ -184,6 +187,9 @@ bool CHUDDetectionInfo::ShouldDraw( void )
 	if ( !crosshair.GetBool() && !IsX360() )
 		return false;
 
+	if (hide_stealthhud.GetBool())
+		return false;
+
 	return ( CHudElement::ShouldDraw() && !engine->IsDrawingLoadingImage() );
 }
 
@@ -326,7 +332,7 @@ void CHUDDetectionInfo::Paint()
 	}
 	else
 	{
-		float healthPerc = (float) currentDetection / 100.0f;
+		float healthPerc = (float) currentDetection / PLAYER_MAX_DETECTION;
 		healthPerc = clamp( healthPerc, 0.0f, 1.0f );
 
 		Color healthColor = m_warnHealth ? gHUD.m_clrCaution : gHUD.m_clrNormal;
@@ -350,7 +356,7 @@ void CHUDDetectionInfo::Paint()
 	}
 	else
 	{
-		float ammoPerc = (float)currentDetection / 100.0f;
+		float ammoPerc = (float)currentDetection / PLAYER_MAX_DETECTION;
 		ammoPerc = clamp(ammoPerc, 0.0f, 1.0f );
 
 		Color ammoColor = m_warnAmmo ? gHUD.m_clrCaution : gHUD.m_clrNormal;

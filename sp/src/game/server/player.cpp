@@ -4784,6 +4784,26 @@ void CBasePlayer::PostThink()
 	{
 		if ( IsAlive() )
 		{
+			// Calculate detection
+			if (m_iDetection > 0)
+			{
+				const float decayDelay = 0.2f; // seconds after last seen
+				//const float decayRate = 50.0f;
+
+				if (gpGlobals->curtime - m_flLastSeenTime > decayDelay)
+				{
+					m_iDetection = MAX(0, m_iDetection - 10);
+					/*
+					static float flLastDecayTime = 0.0f;
+					if (gpGlobals->curtime > flLastDecayTime)
+					{
+						m_iDetection--;
+						flLastDecayTime = gpGlobals->curtime + (1.0f / decayRate);
+					}
+					*/
+				}
+			}
+
 			// set correct collision bounds (may have changed in player movement code)
 			VPROF_SCOPE_BEGIN( "CBasePlayer::PostThink-Bounds" );
 			if ( GetFlags() & FL_DUCKING )
@@ -4890,22 +4910,6 @@ void CBasePlayer::PostThink()
 	SimulatePlayerSimulatedEntities();
 #endif
 
-	// Calculate detection
-	if (m_iDetection > 0)
-	{
-		const float decayDelay = 0.75f; // seconds after last seen
-		const float decayRate = 1.5f; // 0.66666666666
-
-		if (gpGlobals->curtime - m_flLastSeenTime > decayDelay)
-		{
-			static float flLastDecayTime = 0.0f;
-			if (gpGlobals->curtime > flLastDecayTime)
-			{
-				m_iDetection--;
-				flLastDecayTime = gpGlobals->curtime + (1.0f / decayRate);
-			}
-		}
-	}
 }
 
 // handles touching physics objects

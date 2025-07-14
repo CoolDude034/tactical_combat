@@ -12,7 +12,7 @@ class CLogicAlarmManager : public CLogicalEntity
 public:
 	void Spawn();
 	bool ScriptIsPoliceCalled();
-	void AlarmTriggered();
+	void ScriptOnAlarmTriggered();
 
 	CLogicAlarmManager();
 	~CLogicAlarmManager();
@@ -40,7 +40,7 @@ END_DATADESC()
 
 BEGIN_SCRIPTDESC_ROOT(CLogicAlarmManager, "Alarm manager entity")
 DEFINE_SCRIPTFUNC(ScriptIsPoliceCalled, "Returns if the police is called.")
-DEFINE_SCRIPTFUNC(AlarmTriggered, "Trigger the alarm if it wasn't called before")
+DEFINE_SCRIPTFUNC(ScriptOnAlarmTriggered, "Hook triggers when the alarm goes off if it wasn't triggered before")
 END_SCRIPTDESC()
 
 void CLogicAlarmManager::Spawn()
@@ -76,7 +76,7 @@ CLogicAlarmManager::~CLogicAlarmManager()
 
 void CLogicAlarmManager::InputTriggerAlarm(inputdata_t& inputdata)
 {
-	AlarmTriggered();
+	ScriptOnAlarmTriggered();
 }
 
 //-----------------------------------------------------------------------------
@@ -87,7 +87,10 @@ bool CLogicAlarmManager::ScriptIsPoliceCalled()
 	return g_isAlarmTriggered;
 }
 
-void CLogicAlarmManager::AlarmTriggered()
+//-----------------------------------------------------------------------------
+// Purpose: Triggers the alarm trough VScript or map I/O
+//-----------------------------------------------------------------------------
+void CLogicAlarmManager::ScriptOnAlarmTriggered()
 {
 	if (g_isAlarmTriggered) return;
 	g_isAlarmTriggered = true;

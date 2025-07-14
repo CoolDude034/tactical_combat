@@ -33,8 +33,12 @@
 
 const float AI_STANDARD_NPC_SEARCH_TIME = .25;
 const float AI_EFFICIENT_NPC_SEARCH_TIME = .35;
-const float AI_HIGH_PRIORITY_SEARCH_TIME = 0.2; // 0.15 is bit slow, so use 0.2
+const float AI_HIGH_PRIORITY_SEARCH_TIME = 0.15;
 const float AI_MISC_SEARCH_TIME  = 0.45;
+
+const float PLAYER_MAX_DETECTION = 100.0f; // must keep it synced with the one in hud_detectioninfo.cpp!!!
+
+ConVar ai_max_detection_range_in_stealth("ai_max_detection_range_in_stealth", "400");
 
 //-----------------------------------------------------------------------------
 
@@ -426,7 +430,8 @@ bool CAI_Senses::LookThroughPortal( const CProp_Portal *pPortal, CBaseEntity *pS
 int CAI_Senses::LookForHighPriorityEntities( int iDistance )
 {
 	int nSeen = 0;
-	if ( gpGlobals->curtime - m_TimeLastLookHighPriority > AI_HIGH_PRIORITY_SEARCH_TIME )
+	const float searchTime = GlobalEntity_GetState("stealth_mode") ? 0.2f : AI_HIGH_PRIORITY_SEARCH_TIME;
+	if ( gpGlobals->curtime - m_TimeLastLookHighPriority > searchTime )
 	{
 		AI_PROFILE_SENSES(CAI_Senses_LookForHighPriorityEntities);
 		m_TimeLastLookHighPriority = gpGlobals->curtime;
@@ -445,9 +450,9 @@ int CAI_Senses::LookForHighPriorityEntities( int iDistance )
 			{
 				if ( origin.DistToSqr(pPlayer->GetAbsOrigin()) < distSq && Look( pPlayer ) )
 				{
-					if ( pPlayer->m_iDetection < 100.0f )
+					if ( pPlayer->m_iDetection < PLAYER_MAX_DETECTION )
 						pPlayer->m_iDetection++;
-					else if ( pPlayer->m_iDetection >= 100.0f )
+					else if ( pPlayer->m_iDetection >= PLAYER_MAX_DETECTION )
 						nSeen++;
 					pPlayer->m_flLastSeenTime = gpGlobals->curtime;
 				}
@@ -699,7 +704,7 @@ void CAI_Senses::PerformSensing( void )
 	{
 		if (GlobalEntity_GetState("stealth_mode") == GLOBAL_ON)
 		{
-			Look(400);
+			Look(ai_max_detection_range_in_stealth.GetFloat());
 		}
 		else
 		{
