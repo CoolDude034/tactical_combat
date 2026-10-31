@@ -338,6 +338,8 @@ private:
 #ifdef MAPBASE
 	bool			m_bTossesMedkits;
 	bool			m_bAlternateAiming;
+
+	bool			m_bConsideredCombine;
 #endif
 
 	CSimpleSimTimer	m_AutoSummonTimer;
