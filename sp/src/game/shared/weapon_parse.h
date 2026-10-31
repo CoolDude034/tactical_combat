@@ -150,12 +150,6 @@ public:
 	int						m_nWeaponRestriction;
 #endif
 
-	// Iron sights
-	Vector					vecIronsightPosOffset;
-	QAngle					angIronsightAngOffset;
-	float					flIronsightFOVOffset;
-	bool					bCanUseIronsight;
-
 // CLIENT DLL
 	// Sprite data, read from the data file
 	int						iSpriteCount;

@@ -432,15 +432,6 @@ public:
 	virtual int				GetHandRig( void ) const;
 #endif
 
-	virtual bool			HasIronsights(void) { return m_bIsIronsighted; } //default yes; override and return false for weapons with no ironsights (like weapon_crowbar)
-	bool					IsIronsighted(void);
-	void					ToggleIronsights(void);
-	void					EnableIronsights(void);
-	void					DisableIronsights(void);
-	void					SetIronsightTime(void);
-
-	bool					CanUseIronsight() const;
-
 	// derive this function if you mod uses encrypted weapon info files
 	virtual const unsigned char *GetEncryptionKey( void );
 
@@ -519,11 +510,6 @@ public:
 	float				NextSecondaryAttack() { return m_flNextSecondaryAttack; }
 	void				SetNextSecondaryAttack( float flVal ) { m_flNextSecondaryAttack = flVal; }
 #endif
-
-	// Iron-sight functions
-	Vector					GetIronsightPositionOffset(void) const;
-	QAngle					GetIronsightAngleOffset(void) const;
-	float					GetIronsightFOVOffset(void) const;
 
 public:
 // Server Only Methods
@@ -707,9 +693,6 @@ public:
 	CNetworkVar( int, m_iDroppedModelIndex );
 #endif
 
-	// Iron-sight network vars
-	CNetworkVar(bool, m_bIsIronsighted);
-	CNetworkVar(float, m_flIronsightedTime);
 	// Sounds
 	float					m_flNextEmptySoundTime;				// delay on empty sound playing
 

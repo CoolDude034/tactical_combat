@@ -177,8 +177,6 @@ public:
 	virtual bool			GetAttachmentVelocity( int number, Vector &originVel, Quaternion &angleVel );
 #endif
 
-	void		CalcIronsights(Vector& pos, QAngle& ang);
-
 private:
 	CBaseViewModel( const CBaseViewModel & ); // not defined, not accessible
 
