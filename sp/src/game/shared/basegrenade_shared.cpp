@@ -359,7 +359,7 @@ ConVar sk_smoke_grenade_smoke_wind_angle("sk_smoke_grenade_smoke_wind_angle", "0
 
 ConVar sk_smoke_grenade_smoke_despawn_time("sk_smoke_grenade_smoke_despawn_time", "3.5");
 
-ConVar sk_flashbang_model("sk_flashbang_model", "");
+ConVar sk_flashbang_model("sk_flashbang_model", "models/Weapons/w_grenade.mdl");
 ConVar sk_flashbang_fade_time("sk_flashbang_fade_time", "5.0");
 ConVar sk_flashbang_fade_hold("sk_flashbang_fade_hold", "5.0");
 
@@ -423,6 +423,7 @@ void CBaseGrenade::Detonate( void )
 			pSmoke->Spawn();
 
 			variant_t var1;
+			var1.SetFloat(0.2f);
 			pSmoke->AcceptInput("TurnOn", NULL, NULL, var1, -1);
 
 			variant_t variant;
