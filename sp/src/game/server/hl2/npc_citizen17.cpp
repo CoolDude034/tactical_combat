@@ -366,6 +366,7 @@ BEGIN_DATADESC( CNPC_Citizen )
 #ifdef MAPBASE
 	DEFINE_INPUT(		m_bTossesMedkits,			FIELD_BOOLEAN, "SetTossMedkits" ),
 	DEFINE_KEYFIELD(	m_bAlternateAiming,			FIELD_BOOLEAN, "AlternateAiming" ),
+	DEFINE_KEYFIELD(m_bConsideredCombine, FIELD_BOOLEAN, "IsCombine"),
 #endif
 
 	DEFINE_OUTPUT(		m_OnJoinedPlayerSquad,	"OnJoinedPlayerSquad" ),
@@ -989,9 +990,10 @@ string_t CNPC_Citizen::GetModelName() const
 //-----------------------------------------------------------------------------
 Class_T	CNPC_Citizen::Classify()
 {
+	if (m_bConsideredCombine)
+		return CLASS_COMBINE;
 	if (GlobalEntity_GetState("gordon_precriminal") == GLOBAL_ON)
 		return CLASS_CITIZEN_PASSIVE;
-
 	if (GlobalEntity_GetState("citizens_passive") == GLOBAL_ON)
 		return CLASS_CITIZEN_PASSIVE;
 

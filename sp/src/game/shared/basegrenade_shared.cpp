@@ -25,6 +25,7 @@ extern short	g_sModelIndexFireball;		// (in combatweapon.cpp) holds the index fo
 extern short	g_sModelIndexWExplosion;	// (in combatweapon.cpp) holds the index for the underwater explosion
 extern short	g_sModelIndexSmoke;			// (in combatweapon.cpp) holds the index for the smoke cloud
 extern ConVar    sk_plr_dmg_grenade;
+extern ConVar sk_grenade_type;
 
 #if !defined( CLIENT_DLL )
 
@@ -341,6 +342,13 @@ void CBaseGrenade::PreDetonate( void )
 	SetNextThink( gpGlobals->curtime + 1.5 );
 }
 
+ConVar sk_smoke_grenade_base_spread("sk_smoke_grenade_base_spread", "20");
+ConVar sk_smoke_grenade_spread_speed("sk_smoke_grenade_spread_speed", "15");
+ConVar sk_smoke_grenade_smoke_color("sk_smoke_grenade_smoke_color", "255 255 255");
+
+ConVar sk_flashbang_fade_time("sk_flashbang_fade_time", "5.0");
+ConVar sk_flashbang_fade_hold("sk_flashbang_fade_hold", "5.0");
+
 
 void CBaseGrenade::Detonate( void )
 {
@@ -360,11 +368,65 @@ void CBaseGrenade::Detonate( void )
 		UTIL_TraceLine( GetAbsOrigin(), GetAbsOrigin() + Vector( 0, 0, -32), MASK_SHOT_HULL, this, COLLISION_GROUP_NONE, &tr );
 	}
 
-	Explode( &tr, DMG_BLAST );
-
-	if ( GetShakeAmplitude() )
+	if (FStrEq(sk_grenade_type.GetString(), "default"))
 	{
-		UTIL_ScreenShake( GetAbsOrigin(), GetShakeAmplitude(), 150.0, 1.0, GetShakeRadius(), SHAKE_START );
+		Explode(&tr, DMG_BLAST);
+
+		if (GetShakeAmplitude())
+		{
+			UTIL_ScreenShake(GetAbsOrigin(), GetShakeAmplitude(), 150.0, 1.0, GetShakeRadius(), SHAKE_START);
+		}
+	}
+	else if (FStrEq(sk_grenade_type.GetString(), "smoke_grenade") || FStrEq(sk_grenade_type.GetString(), "flash_grenade"))
+	{
+		VPhysicsDestroyObject();
+
+		m_takedamage = DAMAGE_NO;
+
+		if (FStrEq(sk_grenade_type.GetString(), "smoke_grenade"))
+		{
+			CBaseEntity* pSmoke = CreateEntityByName("env_smokestack");
+			pSmoke->SetAbsOrigin(GetAbsOrigin());
+			pSmoke->KeyValue("InitialState", "1");
+			pSmoke->KeyValue("BaseSpread", sk_smoke_grenade_base_spread.GetInt());
+			pSmoke->KeyValue("SpreadSpeed", sk_smoke_grenade_spread_speed.GetInt());
+			pSmoke->KeyValue("rendercolor", sk_smoke_grenade_smoke_color.GetString());
+			pSmoke->KeyValue("renderamt", "255");
+			pSmoke->KeyValue("Speed", "20");
+			pSmoke->KeyValue("StartSize", "20");
+			pSmoke->KeyValue("EndSize", "30");
+			pSmoke->KeyValue("Rate", "20");
+			pSmoke->KeyValue("JetLength", "180");
+			pSmoke->KeyValue("WindAngle", "0");
+			pSmoke->KeyValue("WindSpeed", "0");
+			pSmoke->KeyValue("SmokeMaterial", "particle/SmokeStack.vmt");
+			pSmoke->KeyValue("twist", "0");
+			pSmoke->KeyValue("roll", "0");
+			pSmoke->Spawn();
+
+			//pSmoke->RunScript("EntFireByHandle(self, 'TurnOn', '', 0.00, null, null)");
+			pSmoke->RunScriptFile("smoke_grenade_script");
+		}
+		else if (FStrEq(sk_grenade_type.GetString(), "flash_grenade"))
+		{
+			CBasePlayer* pPlayer = UTIL_GetLocalPlayerOrListenServerHost();
+
+			if (pPlayer->IsLookingTowards(this) && pPlayer->IsInFieldOfView(GetAbsOrigin()))
+			{
+				const color32 colorFlashBang = {255, 255, 255};
+				UTIL_ScreenFade(pPlayer, colorFlashBang, sk_flashbang_fade_time.GetFloat(), sk_flashbang_fade_hold.GetFloat(), FFADE_IN | FFADE_PURGE);
+			}
+		}
+
+#ifdef MAPBASE
+		m_OnDetonate.FireOutput(GetThrower(), this);
+		m_OnDetonate_OutPosition.Set(GetAbsOrigin(), GetThrower(), this);
+#endif
+
+		SetThink(&CBaseGrenade::SUB_Remove);
+		SetTouch(NULL);
+		SetSolid(SOLID_NONE);
+		SetAbsVelocity(vec3_origin);
 	}
 }
 
