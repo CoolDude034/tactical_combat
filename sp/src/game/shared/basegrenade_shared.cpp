@@ -379,9 +379,22 @@ void CBaseGrenade::Detonate( void )
 	}
 	else if (FStrEq(sk_grenade_type.GetString(), "smoke_grenade") || FStrEq(sk_grenade_type.GetString(), "flash_grenade"))
 	{
-		VPhysicsDestroyObject();
+#if !defined( CLIENT_DLL )
+		CBaseEntity* pFakeGrenadeProp = CreateEntityByName("prop_dynamic_override");
+		pFakeGrenadeProp->SetModelName(GetModelName());
+		pFakeGrenadeProp->SetAbsOrigin(GetAbsOrigin());
+		pFakeGrenadeProp->SetAbsAngles(GetAbsAngles());
+		pFakeGrenadeProp->Spawn();
+
+		pFakeGrenadeProp->RunScript("EntFireByHandle(self, 'Kill', '', 8.00, null, null)");
+#endif
+		SetModelName(NULL_STRING);//invisible
+		AddSolidFlags(FSOLID_NOT_SOLID);
 
 		m_takedamage = DAMAGE_NO;
+
+#if !defined( CLIENT_DLL )
+		CSoundEnt::InsertSound(SOUND_COMBAT, GetAbsOrigin(), BASEGRENADE_EXPLOSION_VOLUME, 3.0);
 
 		if (FStrEq(sk_grenade_type.GetString(), "smoke_grenade"))
 		{
@@ -411,12 +424,13 @@ void CBaseGrenade::Detonate( void )
 		{
 			CBasePlayer* pPlayer = UTIL_GetLocalPlayerOrListenServerHost();
 
-			if (pPlayer->IsLookingTowards(this) && pPlayer->IsInFieldOfView(GetAbsOrigin()))
+			if (pPlayer->IsInFieldOfView(GetAbsOrigin()))
 			{
-				const color32 colorFlashBang = {255, 255, 255};
+				const color32 colorFlashBang = { 255, 255, 255 };
 				UTIL_ScreenFade(pPlayer, colorFlashBang, sk_flashbang_fade_time.GetFloat(), sk_flashbang_fade_hold.GetFloat(), FFADE_IN | FFADE_PURGE);
 			}
 		}
+#endif
 
 #ifdef MAPBASE
 		m_OnDetonate.FireOutput(GetThrower(), this);
