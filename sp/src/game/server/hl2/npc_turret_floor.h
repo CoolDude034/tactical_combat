@@ -209,7 +209,7 @@ protected:
 
 	virtual bool	OnSide( void );
 
-	bool	IsCitizenTurret( void ) { return HasSpawnFlags( SF_FLOOR_TURRET_CITIZEN ); }
+	bool	IsCitizenTurret( void ) { return HasSpawnFlags( SF_FLOOR_TURRET_CITIZEN ) || NameMatches("turret_buddy"); }
 	bool	UpdateFacing( void );
 	void	DryFire( void );
 	void	UpdateMuzzleMatrix();
