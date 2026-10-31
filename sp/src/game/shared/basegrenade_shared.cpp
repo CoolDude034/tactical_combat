@@ -422,6 +422,9 @@ void CBaseGrenade::Detonate( void )
 			pSmoke->KeyValue("roll", sk_smoke_grenade_smoke_roll.GetFloat());
 			pSmoke->Spawn();
 
+			variant_t var1;
+			pSmoke->AcceptInput("TurnOn", NULL, NULL, var1, -1);
+
 			variant_t variant;
 			variant.SetFloat(sk_smoke_grenade_smoke_despawn_time.GetFloat());
 			pSmoke->AcceptInput("Kill", NULL, NULL, variant, -1);
