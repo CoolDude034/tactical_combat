@@ -439,6 +439,8 @@ public:
 	void					DisableIronsights(void);
 	void					SetIronsightTime(void);
 
+	bool					CanUseIronsight() const;
+
 	// derive this function if you mod uses encrypted weapon info files
 	virtual const unsigned char *GetEncryptionKey( void );
 

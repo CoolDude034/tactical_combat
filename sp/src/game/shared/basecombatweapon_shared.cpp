@@ -188,10 +188,19 @@ bool CBaseCombatWeapon::IsIronsighted(void)
 
 void CBaseCombatWeapon::ToggleIronsights(void)
 {
-	if (m_bIsIronsighted)
+	if (!CanUseIronsight())
+		return;
+	if (m_bInReload == true)
+	{
 		DisableIronsights();
+	}
 	else
-		EnableIronsights();
+	{
+		if (m_bIsIronsighted)
+			DisableIronsights();
+		else
+			EnableIronsights();
+	}
 }
 
 ConVar sk_iron_sight_fov_enable("sk_iron_sight_fov_enable", "1.0");
@@ -199,6 +208,9 @@ ConVar sk_iron_sight_fov_disable("sk_iron_sight_fov_disable", "0.4");
 
 void CBaseCombatWeapon::EnableIronsights(void)
 {
+	if (!CanUseIronsight())
+		return;
+
 #ifdef CLIENT_DLL
 	if (!prediction->IsFirstTimePredicted())
 		return;
@@ -211,8 +223,12 @@ void CBaseCombatWeapon::EnableIronsights(void)
 	if (!pOwner)
 		return;
 
+	pOwner->EmitSound("BasePlayer.IronSightOut");
+
 	if (pOwner->SetFOV(this, pOwner->GetDefaultFOV() + GetIronsightFOVOffset(), sk_iron_sight_fov_enable.GetFloat())) //modify the last value to adjust how fast the fov is applied
 	{
+		ConVar* crosshair = cvar->FindVar("Crosshair");
+		crosshair->SetValue("0");
 		m_bIsIronsighted = true;
 		SetIronsightTime();
 	}
@@ -232,8 +248,12 @@ void CBaseCombatWeapon::DisableIronsights(void)
 	if (!pOwner)
 		return;
 
+	pOwner->EmitSound("BasePlayer.IronSightOut");
+
 	if (pOwner->SetFOV(this, 0, sk_iron_sight_fov_disable.GetFloat())) //modify the last value to adjust how fast the fov is applied
 	{
+		ConVar* crosshair = cvar->FindVar("Crosshair");
+		crosshair->SetValue("1");
 		m_bIsIronsighted = false;
 		SetIronsightTime();
 	}
@@ -242,6 +262,11 @@ void CBaseCombatWeapon::DisableIronsights(void)
 void CBaseCombatWeapon::SetIronsightTime(void)
 {
 	m_flIronsightedTime = gpGlobals->curtime;
+}
+
+bool CBaseCombatWeapon::CanUseIronsight() const
+{
+	return GetWpnData().bCanUseIronsight;
 }
 
 #ifdef CLIENT_DLL
