@@ -1736,7 +1736,7 @@ bool CHalfLife2::ShouldCollide( int collisionGroup0, int collisionGroup1 )
 		return false;
 
 	// Prevent player allies from colliding with the player
-	if (collisionGroup0 == COLLISION_GROUP_PLAYER && collisionGroup1 == COLLISION_GROUP_PLAYER_ALLY)
+	if (collisionGroup0 == COLLISION_GROUP_PLAYER_ALLY && collisionGroup1 == COLLISION_GROUP_PLAYER)
 		return false;
 
 	// HL2 treats movement and tracing against players the same, so just remap here
