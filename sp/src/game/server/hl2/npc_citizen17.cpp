@@ -535,10 +535,8 @@ void CNPC_Citizen::Spawn()
 {
 	BaseClass::Spawn();
 
-#ifdef _XBOX
-	// Always fade the corpse
-	AddSpawnFlags( SF_NPC_FADE_CORPSE );
-#endif // _XBOX
+	SetName(MAKE_STRING("player_ally"));
+	AddSpawnFlags(SF_NPC_FADE_CORPSE);
 
 	if ( ShouldAutosquad() )
 	{
@@ -558,44 +556,6 @@ void CNPC_Citizen::Spawn()
 
 	m_bShouldPatrol = false;
 	m_iHealth = sk_citizen_health.GetFloat();
-	
-#ifdef MAPBASE
-	// Now only gets citizen_trains.
-	if ( GetMoveParent() && FClassnameIs( GetMoveParent(), "func_tracktrain" ) )
-	{
-		if ( NameMatches("citizen_train_2") )
-		{
-			CapabilitiesRemove( bits_CAP_MOVE_GROUND );
-			SetMoveType( MOVETYPE_NONE );
-			SetSequenceByName( "d1_t01_TrainRide_Sit_Idle" );
-			SetIdealActivity( ACT_DO_NOT_DISTURB );
-		}
-		else if ( NameMatches("citizen_train_1") )
-		{
-			CapabilitiesRemove( bits_CAP_MOVE_GROUND );
-			SetMoveType( MOVETYPE_NONE );
-			SetSequenceByName( "d1_t01_TrainRide_Stand" );
-			SetIdealActivity( ACT_DO_NOT_DISTURB );
-		}
-	}
-#else
-	// Are we on a train? Used in trainstation to have NPCs on trains.
-	if ( GetMoveParent() && FClassnameIs( GetMoveParent(), "func_tracktrain" ) )
-	{
-		CapabilitiesRemove( bits_CAP_MOVE_GROUND );
-		SetMoveType( MOVETYPE_NONE );
-		if ( NameMatches("citizen_train_2") )
-		{
-			SetSequenceByName( "d1_t01_TrainRide_Sit_Idle" );
-			SetIdealActivity( ACT_DO_NOT_DISTURB );
-		}
-		else
-		{
-			SetSequenceByName( "d1_t01_TrainRide_Stand" );
-			SetIdealActivity( ACT_DO_NOT_DISTURB );
-		}
-	}
-#endif
 
 	m_flStopManhackFlinch = -1;
 
@@ -618,6 +578,8 @@ void CNPC_Citizen::Spawn()
 
 	AddEFlags( EFL_NO_DISSOLVE | EFL_NO_MEGAPHYSCANNON_RAGDOLL | EFL_NO_PHYSCANNON_INTERACTION );
 
+	m_flSpeedModifier = 1.25f;
+
 	NPCInit();
 
 	SetUse( &CNPC_Citizen::CommanderUse );
@@ -627,13 +589,6 @@ void CNPC_Citizen::Spawn()
 
 	// Use render bounds instead of human hull for guys sitting in chairs, etc.
 	m_ActBusyBehavior.SetUseRenderBounds( HasSpawnFlags( SF_CITIZEN_USE_RENDER_BOUNDS ) );
-
-#ifdef MAPBASE
-	if (NameMatches("griggs"))
-	{
-		m_bTossesMedkits = true;
-	}
-#endif
 }
 
 //-----------------------------------------------------------------------------
@@ -992,19 +947,29 @@ Class_T	CNPC_Citizen::Classify()
 {
 	if (m_bConsideredCombine)
 		return CLASS_COMBINE;
-	if (GlobalEntity_GetState("gordon_precriminal") == GLOBAL_ON)
-		return CLASS_CITIZEN_PASSIVE;
-	if (GlobalEntity_GetState("citizens_passive") == GLOBAL_ON)
-		return CLASS_CITIZEN_PASSIVE;
 
 	return CLASS_PLAYER_ALLY;
+}
+
+Disposition_t CNPC_Citizen::IRelationType(CBaseEntity* pTarget)
+{
+	Disposition_t disp = BaseClass::IRelationType(pTarget);
+	if (pTarget == NULL)
+		return disp;
+
+	if (pTarget->NameMatches("turret_buddy"))
+		return D_LI;
+	if (FStrEq(pTarget->GetClassname(), "npc_combine_camera"))
+		return D_NU;
+
+	return disp;
 }
 
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
 bool CNPC_Citizen::ShouldAlwaysThink() 
 { 
-	return ( BaseClass::ShouldAlwaysThink() || IsInPlayerSquad() ); 
+	return ( BaseClass::ShouldAlwaysThink() || IsInPlayerSquad() );
 }
 	
 //-----------------------------------------------------------------------------
@@ -1186,6 +1151,16 @@ void CNPC_Citizen::PrescheduleThink()
 
 	UpdatePlayerSquad();
 	UpdateFollowCommandPoint();
+
+	if (!m_bConsideredCombine)
+	{
+		CBasePlayer* pPlayer = UTIL_GetLocalPlayerOrListenServerHost();
+		float distance = (GetLocalOrigin() - pPlayer->GetLocalOrigin()).Length() / 32.0;
+		if (distance >= 31.25)
+		{
+			SetLocalOrigin(pPlayer->GetLocalOrigin());
+		}
+	}
 
 	if ( !npc_citizen_insignia.GetBool() && npc_citizen_squad_marker.GetBool() && IsInPlayerSquad() )
 	{
@@ -2863,7 +2838,7 @@ void CNPC_Citizen::SetPlayerAvoidState( void )
 
 	m_bPerformAvoidance = bShouldPlayerAvoid;
 
-	if ( GetCollisionGroup() == COLLISION_GROUP_NPC || GetCollisionGroup() == COLLISION_GROUP_NPC_ACTOR )
+	if ( GetCollisionGroup() == COLLISION_GROUP_PLAYER_ALLY || GetCollisionGroup() == COLLISION_GROUP_NPC_ACTOR )
 	{
 		if ( m_bPerformAvoidance == true ||
 			(bSquadNoCollide && !m_bPlayerAvoidState))
@@ -2872,7 +2847,7 @@ void CNPC_Citizen::SetPlayerAvoidState( void )
 		}
 		else
 		{
-			SetCollisionGroup( COLLISION_GROUP_NPC );
+			SetCollisionGroup( COLLISION_GROUP_PLAYER_ALLY );
 		}
 	}
 }
