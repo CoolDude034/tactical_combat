@@ -1741,29 +1741,9 @@ void CNPC_Citizen::StartTask( const Task_t *pTask )
 		break;
 
 	case TASK_CIT_SIT_ON_TRAIN:
-		if ( NameMatches("citizen_train_2") )
-		{
-			SetSequenceByName( "d1_t01_TrainRide_Sit_Idle" );
-			SetIdealActivity( ACT_DO_NOT_DISTURB );
-		}
-		else
-		{
-			SetSequenceByName( "d1_t01_TrainRide_Stand" );
-			SetIdealActivity( ACT_DO_NOT_DISTURB );
-		}
 		break;
 
 	case TASK_CIT_LEAVE_TRAIN:
-		if ( NameMatches("citizen_train_2") )
-		{
-			SetSequenceByName( "d1_t01_TrainRide_Sit_Exit" );
-			SetIdealActivity( ACT_DO_NOT_DISTURB );
-		}
-		else
-		{
-			SetSequenceByName( "d1_t01_TrainRide_Stand_Exit" );
-			SetIdealActivity( ACT_DO_NOT_DISTURB );
-		}
 		break;
 		
 	case TASK_CIT_HEAL:
@@ -1859,23 +1839,11 @@ void CNPC_Citizen::RunTask( const Task_t *pTask )
 		}
 		case TASK_CIT_SIT_ON_TRAIN:
 		{
-			// If we were on a train, but we're not anymore, enable movement
-			if ( !GetMoveParent() )
-			{
-				SetMoveType( MOVETYPE_STEP );
-				CapabilitiesAdd( bits_CAP_MOVE_GROUND );
-				TaskComplete();
-			}
 			break;
 		}
 
 		case TASK_CIT_LEAVE_TRAIN:
 		{
-			if ( IsSequenceFinished() )
-			{
-				SetupVPhysicsHull();
-				TaskComplete();
-			}
 			break;
 		}
 
@@ -2582,15 +2550,9 @@ bool CNPC_Citizen::IsCommandable()
 
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
-bool CNPC_Citizen::IsPlayerAlly( CBasePlayer *pPlayer )											
-{ 
-	if ( Classify() == CLASS_CITIZEN_PASSIVE && GlobalEntity_GetState("gordon_precriminal") == GLOBAL_ON )
-	{
-		// Robin: Citizens use friendly speech semaphore in trainstation
-		return true;
-	}
-
-	return BaseClass::IsPlayerAlly( pPlayer );
+bool CNPC_Citizen::IsPlayerAlly( CBasePlayer *pPlayer )
+{
+	return true;
 }
 
 //-----------------------------------------------------------------------------
