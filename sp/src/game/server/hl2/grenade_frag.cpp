@@ -30,6 +30,9 @@ ConVar sk_plr_dmg_fraggrenade	( "sk_plr_dmg_fraggrenade","0");
 ConVar sk_npc_dmg_fraggrenade	( "sk_npc_dmg_fraggrenade","0");
 ConVar sk_fraggrenade_radius	( "sk_fraggrenade_radius", "0");
 
+extern ConVar sk_grenade_type;
+extern ConVar sk_flashbang_model;
+
 #define GRENADE_MODEL "models/Weapons/w_grenade.mdl"
 
 class CGrenadeFrag : public CBaseGrenade
@@ -109,7 +112,14 @@ void CGrenadeFrag::Spawn( void )
 {
 	Precache( );
 
-	SetModel( GRENADE_MODEL );
+	if (FStrEq(sk_grenade_type.GetString(), "flash_grenade") && (sk_flashbang_model.GetString() != NULL) && (sk_flashbang_model.GetString()[0] != '\0'))
+	{
+		SetModel(sk_flashbang_model.GetString());
+	}
+	else
+	{
+		SetModel( GRENADE_MODEL );
+	}
 
 	if( GetOwnerEntity() && GetOwnerEntity()->IsPlayer() )
 	{
@@ -301,7 +311,14 @@ void CGrenadeFrag::VPhysicsUpdate( IPhysicsObject *pPhysics )
 
 void CGrenadeFrag::Precache( void )
 {
-	PrecacheModel( GRENADE_MODEL );
+	if (FStrEq(sk_grenade_type.GetString(), "flash_grenade") && (sk_flashbang_model.GetString() != NULL) && (sk_flashbang_model.GetString()[0] != '\0'))
+	{
+		PrecacheModel(sk_flashbang_model.GetString());
+	}
+	else
+	{
+		PrecacheModel(GRENADE_MODEL);
+	}
 
 	PrecacheScriptSound( "Grenade.Blip" );
 

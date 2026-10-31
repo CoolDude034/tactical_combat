@@ -357,6 +357,9 @@ ConVar sk_smoke_grenade_smoke_end_size("sk_smoke_grenade_smoke_end_size", "30");
 ConVar sk_smoke_grenade_smoke_wind_speed("sk_smoke_grenade_smoke_wind_speed", "0");
 ConVar sk_smoke_grenade_smoke_wind_angle("sk_smoke_grenade_smoke_wind_angle", "0");
 
+ConVar sk_smoke_grenade_smoke_despawn_time("sk_smoke_grenade_smoke_despawn_time", "3.5");
+
+ConVar sk_flashbang_model("sk_flashbang_model", "");
 ConVar sk_flashbang_fade_time("sk_flashbang_fade_time", "5.0");
 ConVar sk_flashbang_fade_hold("sk_flashbang_fade_hold", "5.0");
 
@@ -390,15 +393,6 @@ void CBaseGrenade::Detonate( void )
 	}
 	else if (FStrEq(sk_grenade_type.GetString(), "smoke_grenade") || FStrEq(sk_grenade_type.GetString(), "flash_grenade"))
 	{
-#if !defined( CLIENT_DLL )
-		CBaseEntity* pFakeGrenadeProp = CreateEntityByName("prop_dynamic_override");
-		pFakeGrenadeProp->SetModelName(GetModelName());
-		pFakeGrenadeProp->SetAbsOrigin(GetAbsOrigin());
-		pFakeGrenadeProp->SetAbsAngles(GetAbsAngles());
-		pFakeGrenadeProp->Spawn();
-
-		pFakeGrenadeProp->RunScript("EntFireByHandle(self, 'Kill', '', 8.00, null, null)");
-#endif
 		SetModelName(NULL_STRING);//invisible
 		AddSolidFlags(FSOLID_NOT_SOLID);
 
@@ -428,8 +422,9 @@ void CBaseGrenade::Detonate( void )
 			pSmoke->KeyValue("roll", sk_smoke_grenade_smoke_roll.GetFloat());
 			pSmoke->Spawn();
 
-			//pSmoke->RunScript("EntFireByHandle(self, 'TurnOn', '', 0.00, null, null)");
-			pSmoke->RunScriptFile("smoke_grenade_script");
+			variant_t variant;
+			variant.SetFloat(sk_smoke_grenade_smoke_despawn_time.GetFloat());
+			pSmoke->AcceptInput("Kill", NULL, NULL, variant, -1);
 		}
 		else if (FStrEq(sk_grenade_type.GetString(), "flash_grenade"))
 		{
