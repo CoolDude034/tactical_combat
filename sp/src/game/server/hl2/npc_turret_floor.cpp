@@ -248,8 +248,8 @@ void CNPC_FloorTurret::Precache( void )
 
 	if ( IsCitizenTurret() )
 	{
-		PrecacheModel( LASER_BEAM_SPRITE );
-		PrecacheScriptSound( "NPC_FloorTurret.AlarmPing");
+		PrecacheModel(LASER_BEAM_SPRITE);
+		PrecacheScriptSound("NPC_FloorTurret.AlarmPing");
 	}
 
 	// Activities
