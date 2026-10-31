@@ -101,6 +101,7 @@ public:
 	string_t 		GetModelName() const;
 	
 	Class_T 		Classify();
+	Disposition_t IRelationType(CBaseEntity* pTarget);
 
 	bool 			ShouldAlwaysThink();
 
