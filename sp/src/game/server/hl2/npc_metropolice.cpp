@@ -3264,18 +3264,6 @@ Disposition_t CNPC_MetroPolice::IRelationType(CBaseEntity *pTarget)
 	if ( pTarget == NULL )
 		return disp;
 
-	// If the player's not a criminal, then we don't necessary hate him
-	if ( pTarget->Classify() == CLASS_PLAYER )
-	{
-		if ( !PlayerIsCriminal() && (disp == D_HT) )
-		{
-			// If we're pissed at the player, we're allowed to hate them.
-			if ( m_flChasePlayerTime && m_flChasePlayerTime > gpGlobals->curtime )
-				return D_HT;
-			return D_NU;
-		}
-	}
-
 	return disp;
 }
 
