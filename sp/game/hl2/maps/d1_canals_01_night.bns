@@ -1,0 +1,6 @@
+"ROUTE CANAL"
+{
+	"map"		"d1_canals_01_night"
+	"image"		"./d1_canals_01_night.tga"
+	"comment"	"Escape Civil Protection trough the Canals"
+}

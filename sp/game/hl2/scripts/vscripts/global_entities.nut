@@ -1,0 +1,1 @@
+SpawnEntityFromTable("shadow_control", {enableshadowsfromlocallights = "1"})
