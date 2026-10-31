@@ -1408,7 +1408,7 @@ void CNPC_FloorTurret::ReturnToLife( void )
 	// Return to life
 	SetState( NPC_STATE_IDLE );
 	m_lifeState = LIFE_ALIVE;
-	SetCollisionGroup( COLLISION_GROUP_NONE );
+	SetCollisionGroup( COLLISION_GROUP_PLAYER_ALLY );
 
 	// Become active again
 	Enable();
