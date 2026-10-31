@@ -342,9 +342,20 @@ void CBaseGrenade::PreDetonate( void )
 	SetNextThink( gpGlobals->curtime + 1.5 );
 }
 
+ConVar sk_grenade_type("sk_grenade_type", "default");
+
 ConVar sk_smoke_grenade_base_spread("sk_smoke_grenade_base_spread", "20");
 ConVar sk_smoke_grenade_spread_speed("sk_smoke_grenade_spread_speed", "15");
 ConVar sk_smoke_grenade_smoke_color("sk_smoke_grenade_smoke_color", "255 255 255");
+ConVar sk_smoke_grenade_smoke_twist("sk_smoke_grenade_smoke_twist", "0");
+ConVar sk_smoke_grenade_smoke_roll("sk_smoke_grenade_smoke_roll", "0");
+
+ConVar sk_smoke_grenade_smoke_start_speed("sk_smoke_grenade_smoke_start_speed", "20");
+ConVar sk_smoke_grenade_smoke_start_size("sk_smoke_grenade_smoke_start_size", "20");
+ConVar sk_smoke_grenade_smoke_end_size("sk_smoke_grenade_smoke_end_size", "30");
+
+ConVar sk_smoke_grenade_smoke_wind_speed("sk_smoke_grenade_smoke_wind_speed", "0");
+ConVar sk_smoke_grenade_smoke_wind_angle("sk_smoke_grenade_smoke_wind_angle", "0");
 
 ConVar sk_flashbang_fade_time("sk_flashbang_fade_time", "5.0");
 ConVar sk_flashbang_fade_hold("sk_flashbang_fade_hold", "5.0");
@@ -405,16 +416,16 @@ void CBaseGrenade::Detonate( void )
 			pSmoke->KeyValue("SpreadSpeed", sk_smoke_grenade_spread_speed.GetInt());
 			pSmoke->KeyValue("rendercolor", sk_smoke_grenade_smoke_color.GetString());
 			pSmoke->KeyValue("renderamt", "255");
-			pSmoke->KeyValue("Speed", "20");
-			pSmoke->KeyValue("StartSize", "20");
-			pSmoke->KeyValue("EndSize", "30");
+			pSmoke->KeyValue("Speed", sk_smoke_grenade_smoke_start_speed.GetInt());
+			pSmoke->KeyValue("StartSize", sk_smoke_grenade_smoke_start_size.GetInt());
+			pSmoke->KeyValue("EndSize", sk_smoke_grenade_smoke_end_size.GetInt());
 			pSmoke->KeyValue("Rate", "20");
 			pSmoke->KeyValue("JetLength", "180");
-			pSmoke->KeyValue("WindAngle", "0");
-			pSmoke->KeyValue("WindSpeed", "0");
+			pSmoke->KeyValue("WindAngle", sk_smoke_grenade_smoke_wind_angle.GetInt());
+			pSmoke->KeyValue("WindSpeed", sk_smoke_grenade_smoke_wind_speed.GetInt());
 			pSmoke->KeyValue("SmokeMaterial", "particle/SmokeStack.vmt");
-			pSmoke->KeyValue("twist", "0");
-			pSmoke->KeyValue("roll", "0");
+			pSmoke->KeyValue("twist", sk_smoke_grenade_smoke_twist.GetFloat());
+			pSmoke->KeyValue("roll", sk_smoke_grenade_smoke_roll.GetFloat());
 			pSmoke->Spawn();
 
 			//pSmoke->RunScript("EntFireByHandle(self, 'TurnOn', '', 0.00, null, null)");
@@ -433,8 +444,8 @@ void CBaseGrenade::Detonate( void )
 #endif
 
 #ifdef MAPBASE
-		m_OnDetonate.FireOutput(GetThrower(), this);
-		m_OnDetonate_OutPosition.Set(GetAbsOrigin(), GetThrower(), this);
+		//m_OnDetonate.FireOutput(GetThrower(), this);
+		//m_OnDetonate_OutPosition.Set(GetAbsOrigin(), GetThrower(), this);
 #endif
 
 		SetThink(&CBaseGrenade::SUB_Remove);
