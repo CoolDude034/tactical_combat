@@ -410,6 +410,7 @@ void CBaseGrenade::Detonate( void )
 			CBaseEntity* pSmoke = CreateEntityByName("env_smokestack");
 			pSmoke->SetAbsOrigin(GetAbsOrigin());
 			pSmoke->SetName(MAKE_STRING("smoke_grenade_smokecloud"));
+			pSmoke->SetOwnerEntity(this);
 			pSmoke->KeyValue("InitialState", "1");
 			pSmoke->KeyValue("BaseSpread", sk_smoke_grenade_base_spread.GetInt());
 			pSmoke->KeyValue("SpreadSpeed", sk_smoke_grenade_spread_speed.GetInt());
@@ -428,7 +429,6 @@ void CBaseGrenade::Detonate( void )
 			pSmoke->Spawn();
 
 			// Atp, i just run a script lmao
-			pSmoke->SetOwnerEntity(this);
 			pSmoke->RunScriptFile("dll/smoke_grenade");
 		}
 		else if (FStrEq(sk_grenade_type.GetString(), "flash_grenade"))
