@@ -396,8 +396,9 @@ void CBaseGrenade::Detonate( void )
 	}
 	else if (FStrEq(sk_grenade_type.GetString(), "smoke_grenade") || FStrEq(sk_grenade_type.GetString(), "flash_grenade"))
 	{
-		SetModelName(NULL_STRING);//invisible
+		//SetModelName(NULL_STRING);//invisible
 		AddSolidFlags(FSOLID_NOT_SOLID);
+		VPhysicsDestroyObject();
 
 		m_takedamage = DAMAGE_NO;
 
@@ -427,6 +428,7 @@ void CBaseGrenade::Detonate( void )
 			pSmoke->Spawn();
 
 			// Atp, i just run a script lmao
+			pSmoke->SetOwnerEntity(this);
 			pSmoke->RunScriptFile("dll/smoke_grenade");
 		}
 		else if (FStrEq(sk_grenade_type.GetString(), "flash_grenade"))
@@ -438,6 +440,9 @@ void CBaseGrenade::Detonate( void )
 				const color32 colorFlashBang = { 255, 255, 255 };
 				UTIL_ScreenFade(pPlayer, colorFlashBang, sk_flashbang_fade_time.GetFloat(), sk_flashbang_fade_hold.GetFloat(), FFADE_IN | FFADE_PURGE);
 			}
+
+			EmitSound("BaseGrenade.FlashGrenadeExplode");
+			RunScriptFile("dll/flash_grenade");
 		}
 
 #ifdef MAPBASE
@@ -446,9 +451,9 @@ void CBaseGrenade::Detonate( void )
 #endif
 #endif
 
-		SetThink(&CBaseGrenade::SUB_Remove);
-		SetTouch(NULL);
-		SetSolid(SOLID_NONE);
+		//SetThink(&CBaseGrenade::SUB_Remove);
+		//SetTouch(NULL);
+		//SetSolid(SOLID_NONE);
 		SetAbsVelocity(vec3_origin);
 	}
 }
@@ -630,11 +635,20 @@ void CBaseGrenade ::TumbleThink( void )
 	}
 }
 
-void CBaseGrenade::Precache( void )
+void CBaseGrenade::Precache(void)
 {
-	BaseClass::Precache( );
+	BaseClass::Precache();
 
-	PrecacheScriptSound( "BaseGrenade.Explode" );
+	PrecacheScriptSound("BaseGrenade.Explode");
+
+	if (FStrEq(sk_grenade_type.GetString(), "flash_grenade"))
+	{
+		PrecacheModel(sk_flashbang_model.GetString());
+	}
+	else if (FStrEq(sk_grenade_type.GetString(), "smoke_grenade"))
+	{
+		PrecacheMaterial("particle/SmokeStack.vmt");
+	}
 }
 
 //-----------------------------------------------------------------------------
