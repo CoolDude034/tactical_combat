@@ -441,11 +441,11 @@ void CBaseGrenade::Detonate( void )
 				UTIL_ScreenFade(pPlayer, colorFlashBang, sk_flashbang_fade_time.GetFloat(), sk_flashbang_fade_hold.GetFloat(), FFADE_IN | FFADE_PURGE);
 			}
 		}
-#endif
 
 #ifdef MAPBASE
 		m_OnDetonate.FireOutput(GetThrower(), this);
 		m_OnDetonate_OutPosition.Set(GetAbsOrigin(), GetThrower(), this);
+#endif
 #endif
 
 		SetThink(&CBaseGrenade::SUB_Remove);
