@@ -405,6 +405,7 @@ void CBaseGrenade::Detonate( void )
 		{
 			CBaseEntity* pSmoke = CreateEntityByName("env_smokestack");
 			pSmoke->SetAbsOrigin(GetAbsOrigin());
+			pSmoke->SetName(MAKE_STRING("smoke_grenade_smokecloud"));
 			pSmoke->KeyValue("InitialState", "1");
 			pSmoke->KeyValue("BaseSpread", sk_smoke_grenade_base_spread.GetInt());
 			pSmoke->KeyValue("SpreadSpeed", sk_smoke_grenade_spread_speed.GetInt());
@@ -443,8 +444,8 @@ void CBaseGrenade::Detonate( void )
 #endif
 
 #ifdef MAPBASE
-		//m_OnDetonate.FireOutput(GetThrower(), this);
-		//m_OnDetonate_OutPosition.Set(GetAbsOrigin(), GetThrower(), this);
+		m_OnDetonate.FireOutput(GetThrower(), this);
+		m_OnDetonate_OutPosition.Set(GetAbsOrigin(), GetThrower(), this);
 #endif
 
 		SetThink(&CBaseGrenade::SUB_Remove);
