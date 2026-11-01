@@ -354,6 +354,9 @@ ConVar sk_smoke_grenade_smoke_start_speed("sk_smoke_grenade_smoke_start_speed", 
 ConVar sk_smoke_grenade_smoke_start_size("sk_smoke_grenade_smoke_start_size", "20");
 ConVar sk_smoke_grenade_smoke_end_size("sk_smoke_grenade_smoke_end_size", "30");
 
+ConVar sk_smoke_grenade_smoke_rate("sk_smoke_grenade_smoke_rate", "20");
+ConVar sk_smoke_grenade_smoke_jet_length("sk_smoke_grenade_smoke_jet_length", "180");
+
 ConVar sk_smoke_grenade_smoke_wind_speed("sk_smoke_grenade_smoke_wind_speed", "0");
 ConVar sk_smoke_grenade_smoke_wind_angle("sk_smoke_grenade_smoke_wind_angle", "0");
 
@@ -414,8 +417,8 @@ void CBaseGrenade::Detonate( void )
 			pSmoke->KeyValue("Speed", sk_smoke_grenade_smoke_start_speed.GetInt());
 			pSmoke->KeyValue("StartSize", sk_smoke_grenade_smoke_start_size.GetInt());
 			pSmoke->KeyValue("EndSize", sk_smoke_grenade_smoke_end_size.GetInt());
-			pSmoke->KeyValue("Rate", "20");
-			pSmoke->KeyValue("JetLength", "180");
+			pSmoke->KeyValue("Rate", sk_smoke_grenade_smoke_rate.GetInt());
+			pSmoke->KeyValue("JetLength", sk_smoke_grenade_smoke_jet_length.GetInt());
 			pSmoke->KeyValue("WindAngle", sk_smoke_grenade_smoke_wind_angle.GetInt());
 			pSmoke->KeyValue("WindSpeed", sk_smoke_grenade_smoke_wind_speed.GetInt());
 			pSmoke->KeyValue("SmokeMaterial", "particle/SmokeStack.vmt");
@@ -423,13 +426,8 @@ void CBaseGrenade::Detonate( void )
 			pSmoke->KeyValue("roll", sk_smoke_grenade_smoke_roll.GetFloat());
 			pSmoke->Spawn();
 
-			variant_t var1;
-			var1.SetFloat(0.2f);
-			pSmoke->AcceptInput("TurnOn", NULL, NULL, var1, -1);
-
-			variant_t variant;
-			variant.SetFloat(sk_smoke_grenade_smoke_despawn_time.GetFloat());
-			pSmoke->AcceptInput("Kill", NULL, NULL, variant, -1);
+			// Atp, i just run a script lmao
+			pSmoke->RunScriptFile("dll/smoke_grenade");
 		}
 		else if (FStrEq(sk_grenade_type.GetString(), "flash_grenade"))
 		{
