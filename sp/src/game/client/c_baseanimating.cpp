@@ -91,6 +91,8 @@ void VCollideWireframe_ChangeCallback( IConVar *pConVar, char const *pOldString,
 
 ConVar vcollide_wireframe( "vcollide_wireframe", "0", FCVAR_CHEAT, "Render physics collision models in wireframe", VCollideWireframe_ChangeCallback );
 
+ConVar cl_ragdoll_fade_time("cl_ragdoll_fade_time", "3.0");
+
 bool C_AnimationLayer::IsActive( void )
 {
 	return (m_nOrder != C_BaseAnimatingOverlay::MAX_OVERLAYS);
@@ -391,6 +393,8 @@ C_ClientRagdoll::C_ClientRagdoll( bool bRestoring )
 	{
 		m_pRagdoll = new CRagdoll;
 	}
+
+	m_flFadeOutDelay = gpGlobals->curtime + cl_ragdoll_fade_time.GetFloat();
 }
 
 void C_ClientRagdoll::OnSave( void )
@@ -674,6 +678,10 @@ void C_ClientRagdoll::ClientThink( void )
 
 	HandleAnimatedFriction();
 
+	if (gpGlobals->curtime >= m_flFadeOutDelay)
+	{
+		SUB_Remove();
+	}
 	FadeOut();
 }
 
