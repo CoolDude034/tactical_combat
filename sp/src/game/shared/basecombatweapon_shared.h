@@ -304,6 +304,18 @@ public:
 																	// but they are out of ammo. The default implementation
 																	// either reloads, switches weapons, or plays an empty sound.
 
+	// Iron-sights
+	Vector					GetIronsightPositionOffset(void) const;
+	QAngle					GetIronsightAngleOffset(void) const;
+	float					GetIronsightFOVOffset(void) const;
+
+	virtual bool			HasIronsights(void) { return true; } //default yes; override and return false for weapons with no ironsights (like weapon_crowbar)
+	bool					IsIronsighted(void);
+	void					ToggleIronsights(void);
+	void					EnableIronsights(void);
+	void					DisableIronsights(void);
+	void					SetIronsightTime(void);
+
 	virtual bool			ShouldBlockPrimaryFire() { return false; }
 
 #ifdef CLIENT_DLL
@@ -692,6 +704,10 @@ public:
 #ifdef MAPBASE
 	CNetworkVar( int, m_iDroppedModelIndex );
 #endif
+
+	// Iron-sights
+	CNetworkVar(bool, m_bIsIronsighted);
+	CNetworkVar(float, m_flIronsightedTime);
 
 	// Sounds
 	float					m_flNextEmptySoundTime;				// delay on empty sound playing
