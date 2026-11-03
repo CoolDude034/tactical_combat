@@ -124,6 +124,7 @@ public:
 	char					szAmmo2[MAX_WEAPON_AMMO_NAME];			// "secondary" ammo type
 
 	// Ironsights
+	bool					bCanUseIronsight; // Allow the use of iron sight functionality
 	Vector					vecIronsightPosOffset;
 	QAngle					angIronsightAngOffset;
 	float					flIronsightFOVOffset;

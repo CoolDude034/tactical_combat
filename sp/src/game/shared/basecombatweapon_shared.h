@@ -315,6 +315,7 @@ public:
 	void					EnableIronsights(void);
 	void					DisableIronsights(void);
 	void					SetIronsightTime(void);
+	bool					CanUseIronsight() const;
 
 	virtual bool			ShouldBlockPrimaryFire() { return false; }
 

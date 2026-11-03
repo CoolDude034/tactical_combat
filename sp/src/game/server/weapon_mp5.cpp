@@ -63,6 +63,12 @@ public:
 		if (GetOwner() && GetOwner()->IsNPC())
 			return npcCone;
 
+		if (m_bIsIronsighted)
+		{
+			static const Vector cone = VECTOR_CONE_1DEGREES;
+			return cone;
+		}
+
 		//static Vector cone;
 
 		// We must know the player "owns" the weapon before different cones may be used

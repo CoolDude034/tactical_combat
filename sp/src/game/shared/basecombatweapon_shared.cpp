@@ -452,13 +452,30 @@ bool CBaseCombatWeapon::IsIronsighted(void)
 	return (m_bIsIronsighted);
 }
 
+bool CBaseCombatWeapon::CanUseIronsight() const
+{
+	return GetWpnData().bCanUseIronsight;
+}
+
 void CBaseCombatWeapon::ToggleIronsights(void)
 {
-	if (m_bIsIronsighted)
+	if (!CanUseIronsight())
+		return;
+	if (m_bInReload == true)
+	{
 		DisableIronsights();
+	}
 	else
-		EnableIronsights();
+	{
+		if (m_bIsIronsighted)
+			DisableIronsights();
+		else
+			EnableIronsights();
+	}
 }
+
+ConVar ironsight_fov_offset_enable("ironsight_fov_offset_enable", "0.4");
+ConVar ironsight_fov_offset_disable("ironsight_fov_offset_disable", "0.2");
 
 void CBaseCombatWeapon::EnableIronsights(void)
 {
@@ -466,6 +483,8 @@ void CBaseCombatWeapon::EnableIronsights(void)
 	if (!prediction->IsFirstTimePredicted())
 		return;
 #endif
+	if (!CanUseIronsight())
+		return;
 	if (!HasIronsights() || m_bIsIronsighted)
 		return;
 
@@ -474,8 +493,12 @@ void CBaseCombatWeapon::EnableIronsights(void)
 	if (!pOwner)
 		return;
 
-	if (pOwner->SetFOV(this, pOwner->GetDefaultFOV() + GetIronsightFOVOffset(), 1.0f)) //modify the last value to adjust how fast the fov is applied
+	pOwner->EmitSound("BasePlayer.IronSightIn");
+
+	if (pOwner->SetFOV(this, pOwner->GetDefaultFOV() + GetIronsightFOVOffset(), ironsight_fov_offset_enable.GetFloat())) //modify the last value to adjust how fast the fov is applied
 	{
+		ConVar* crosshair = cvar->FindVar("Crosshair");
+		crosshair->SetValue("0");
 		m_bIsIronsighted = true;
 		SetIronsightTime();
 	}
@@ -487,6 +510,8 @@ void CBaseCombatWeapon::DisableIronsights(void)
 	if (!prediction->IsFirstTimePredicted())
 		return;
 #endif
+	if (!CanUseIronsight())
+		return;
 	if (!HasIronsights() || !m_bIsIronsighted)
 		return;
 
@@ -495,8 +520,12 @@ void CBaseCombatWeapon::DisableIronsights(void)
 	if (!pOwner)
 		return;
 
-	if (pOwner->SetFOV(this, 0, 0.4f)) //modify the last value to adjust how fast the fov is applied
+	pOwner->EmitSound("BasePlayer.IronSightOut");
+
+	if (pOwner->SetFOV(this, 0, ironsight_fov_offset_disable.GetFloat())) //modify the last value to adjust how fast the fov is applied
 	{
+		ConVar* crosshair = cvar->FindVar("Crosshair");
+		crosshair->SetValue("1");
 		m_bIsIronsighted = false;
 		SetIronsightTime();
 	}
