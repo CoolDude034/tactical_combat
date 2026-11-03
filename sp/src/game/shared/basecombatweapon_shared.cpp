@@ -3484,17 +3484,6 @@ void* SendProxy_SendLocalWeaponDataTable( const SendProp *pProp, const void *pSt
 }
 REGISTER_SEND_PROXY_NON_MODIFIED_POINTER( SendProxy_SendLocalWeaponDataTable );
 
-#ifdef CLIENT_DLL
-void RecvProxy_ToggleSights(const CRecvProxyData* pData, void* pStruct, void* pOut)
-{
-	CBaseCombatWeapon* pWeapon = (CBaseCombatWeapon*)pStruct;
-	if (pData->m_Value.m_Int)
-		pWeapon->EnableIronsights();
-	else
-		pWeapon->DisableIronsights();
-}
-#endif
-
 //-----------------------------------------------------------------------------
 // Purpose: Only send to non-local players
 //-----------------------------------------------------------------------------
@@ -3576,6 +3565,17 @@ BEGIN_NETWORK_TABLE_NOBASE( CBaseCombatWeapon, DT_LocalWeaponData )
 
 #endif
 END_NETWORK_TABLE()
+
+#ifdef CLIENT_DLL
+void RecvProxy_ToggleSights(const CRecvProxyData* pData, void* pStruct, void* pOut)
+{
+	CBaseCombatWeapon* pWeapon = (CBaseCombatWeapon*)pStruct;
+	if (pData->m_Value.m_Int)
+		pWeapon->EnableIronsights();
+	else
+		pWeapon->DisableIronsights();
+}
+#endif
 
 BEGIN_NETWORK_TABLE(CBaseCombatWeapon, DT_BaseCombatWeapon)
 #if !defined( CLIENT_DLL )
