@@ -433,12 +433,17 @@ void CBaseGrenade::Detonate( void )
 		}
 		else if (FStrEq(sk_grenade_type.GetString(), "flash_grenade"))
 		{
-			CBasePlayer* pPlayer = UTIL_GetLocalPlayerOrListenServerHost();
-
-			if (pPlayer->IsInFieldOfView(GetAbsOrigin()))
+			for (int i = 1; i <= gpGlobals->maxClients; i++)
 			{
-				const color32 colorFlashBang = { 255, 255, 255 };
-				UTIL_ScreenFade(pPlayer, colorFlashBang, sk_flashbang_fade_time.GetFloat(), sk_flashbang_fade_hold.GetFloat(), FFADE_IN | FFADE_PURGE);
+				CBasePlayer* pPlayer = UTIL_PlayerByIndex(i);
+				if (!pPlayer || !pPlayer->IsPlayer())
+					continue;
+
+				if (pPlayer->IsInFieldOfView(GetAbsOrigin()))
+				{
+					const color32 colorFlashBang = { 255, 255, 255 };
+					UTIL_ScreenFade(pPlayer, colorFlashBang, sk_flashbang_fade_time.GetFloat(), sk_flashbang_fade_hold.GetFloat(), FFADE_IN | FFADE_PURGE);
+				}
 			}
 
 			EmitSound("BaseGrenade.FlashGrenadeExplode");

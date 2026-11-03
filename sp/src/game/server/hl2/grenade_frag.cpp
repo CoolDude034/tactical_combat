@@ -54,7 +54,17 @@ public:
 	void	SetTimer( float detonateDelay, float warnDelay );
 	void	SetVelocity( const Vector &velocity, const AngularImpulse &angVelocity );
 	int		OnTakeDamage( const CTakeDamageInfo &inputInfo );
-	void	BlipSound() { EmitSound( "Grenade.Blip" ); }
+	void	BlipSound()
+	{
+		if (FStrEq(sk_grenade_type.GetString(), "flash_grenade"))
+		{
+			EmitSound("BaseGrenade.FlashGrenadeBlip");
+		}
+		else
+		{
+			EmitSound("Grenade.Blip");
+		}
+	}
 	void	DelayThink();
 	void	VPhysicsUpdate( IPhysicsObject *pPhysics );
 	void	OnPhysGunPickup( CBasePlayer *pPhysGunUser, PhysGunPickup_t reason );
